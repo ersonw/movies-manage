@@ -1,12 +1,20 @@
 package com.telebott.moviesmanage.service;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.telebott.moviesmanage.dao.*;
 import com.telebott.moviesmanage.entity.Users;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
 
 @Service
@@ -133,4 +141,81 @@ public class UserService {
         return object;
     }
 
+    public JSONObject getList(String d) {
+        JSONObject data = JSONObject.parseObject(d);
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<Users> usersPage;
+        if (data != null){
+            if (data.get("page") != null) page = Integer.parseInt(data.get("page").toString());
+            if (data.get("limit") != null) limit = Integer.parseInt(data.get("limit").toString());
+            page--;
+            if (page < 0) page =0;
+            if (data.get("sort") != null){
+                if (data.get("sort").toString().equals("+id")){
+                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+                }else {
+                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "id"));
+                }
+            }else {
+                pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            }
+            if (data.get("title") == null && data.get("status") == null){
+                usersPage = usersDao.findAll(pageable);
+            }else if (StringUtils.isEmpty(data.get("title").toString()) && StringUtils.isEmpty(data.get("status").toString())){
+                usersPage = usersDao.findAll(pageable);
+            }else if (data.get("title") != null && data.get("status") != null && StringUtils.isNotEmpty(data.get("status").toString())){
+                int status = Integer.parseInt(data.get("status").toString());
+                String title = "%"+data.get("title").toString()+"%";
+                usersPage = usersDao.findAllByNicknamelike(title,status,pageable);
+            }else if (data.get("title") != null){
+                String title = "%"+data.get("title").toString()+"%";
+                usersPage = usersDao.findAllByNicknameLikeOrPhoneLikeOrUidLike(title,title,title,pageable);
+            }else {
+                int status = 0;
+                if (StringUtils.isNotEmpty(data.get("status").toString())){
+                    status = Integer.parseInt(data.get("status").toString());
+                }
+                usersPage = usersDao.findAllByStatus(status,pageable);
+            }
+        }else {
+            usersPage = usersDao.findAll(pageable);
+        }
+        object.put("total",usersPage.getTotalPages());
+        JSONArray array = new JSONArray();
+        for (Users user: usersPage.getContent()) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("id",user.getId());
+            jsonObject.put("nickname",user.getNickname());
+            jsonObject.put("signature",user.getSignature());
+            jsonObject.put("sex",user.getSex());
+            jsonObject.put("birthday",user.getBirthday());
+            jsonObject.put("ctime",user.getCtime());
+            jsonObject.put("utime",user.getUtime());
+            jsonObject.put("gold",user.getGold());
+            jsonObject.put("diamond",user.getDiamond());
+            long balance = Long.parseLong(getBalance(user).get("balance").toString());
+//            jsonObject.put("balance", 0);
+            double b = balance / 100d;
+            jsonObject.put("balance", String.format("%.2f",b));
+            jsonObject.put("status",user.getStatus());
+            jsonObject.put("phone",user.getPhone());
+            jsonObject.put("invite",user.getInvite());
+            jsonObject.put("identifier",user.getIdentifier());
+            jsonObject.put("uid",user.getUid());
+            jsonObject.put("superior","无");
+            if (user.getSuperior() > 0){
+                Users _user = usersDao.findAllById(user.getSuperior());
+                if (_user != null) jsonObject.put("superior",_user.getNickname());
+            }
+            jsonObject.put("expireds",user.getExpireds());
+            jsonObject.put("bk_image",user.getBkImage());
+            jsonObject.put("avatar",user.getAvatar());
+            array.add(jsonObject);
+        }
+        object.put("list",array);
+        return object;
+    }
 }
