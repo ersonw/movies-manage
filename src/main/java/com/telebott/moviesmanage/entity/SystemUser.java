@@ -20,6 +20,9 @@ public class SystemUser {
     private String password;
     private String salt;
     private int role;
+    private String introduction;
+    private String avatar;
+    private String name;
     private long addTime;
     private long updateTime;
     private int status;

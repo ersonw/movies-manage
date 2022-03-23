@@ -12,7 +12,7 @@ public class ResultData {
     private int code = 200;
     private JSONObject data = new JSONObject();
     private String message = "";
-    public String getData(){
-        return data.toJSONString();
-    }
+//    public String getData(){
+//        return data.toJSONString();
+//    }
 }

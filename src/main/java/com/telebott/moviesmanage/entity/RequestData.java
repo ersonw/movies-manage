@@ -11,13 +11,11 @@ import lombok.*;
 @Getter
 @ToString
 public class RequestData {
-    @JsonProperty(value = "identifier", required = false)
-    private String identifier;
+    @JsonProperty(value = "data", required = false)
     private String data;
-    @JsonProperty(value = "user", required = false)
     private String user;
-    public Users getUser() {
+    public SystemUser getUser() {
         JSONObject jsonObject = JSONObject.parseObject(user);
-        return JSONObject.toJavaObject(jsonObject, Users.class);
+        return JSONObject.toJavaObject(jsonObject, SystemUser.class);
     }
 }

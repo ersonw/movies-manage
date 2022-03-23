@@ -167,7 +167,7 @@ public class AuthDao {
         redisTemplate.opsForSet().remove("AdminUser" ,userToken);
     }
     public SystemUser findAdminUserByToken(String token) {
-        Set users = redisTemplate.opsForSet().members("Users");
+        Set users = redisTemplate.opsForSet().members("AdminUser");
         if (users != null){
             for (Object user: users) {
                 ObjectMapper objectMapper = new ObjectMapper();
