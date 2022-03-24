@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface UsersDao extends JpaRepository<Users, Integer>, CrudRepository<Users, Integer> {
     Users findAllById(long id);
@@ -18,6 +20,7 @@ public interface UsersDao extends JpaRepository<Users, Integer>, CrudRepository<
     Page<Users> findAllByNicknameLikeAndStatus(String nickname,int status, Pageable pageable);
     long countAllBySuperior(long uid);
     Page<Users> findAllBySuperior(long uid, Pageable pageable);
+    List<Users> findAllBySuperior(long uid);
     @Query(value = "select * from users where status =:status and (nickname like %:title% or phone like %:title% or uid like %:title% ) ", nativeQuery = true)
     Page<Users> findAllByNicknamelike(String title,int status , Pageable pageable);
     Page<Users> findAllByNicknameLikeOrPhoneLikeOrUidLike(String nickname, String phone,String uid, Pageable pageable);

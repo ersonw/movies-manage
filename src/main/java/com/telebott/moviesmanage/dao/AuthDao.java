@@ -107,7 +107,18 @@ public class AuthDao {
             }
         }
     }
-    public void removeUser(Users userToken){}
+    public void removeUser(Users userToken){
+        Set users = redisTemplate.opsForSet().members("Users");
+        if (users != null){
+            for (Object user: users) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                Users userEntity = objectMapper.convertValue(user,Users.class);
+                if (userEntity.getId() == userToken.getId()){
+                    popUser(userEntity);
+                }
+            }
+        }
+    }
     public void popUser(Users userToken){
         redisTemplate.opsForSet().remove("Users" ,userToken);
     }

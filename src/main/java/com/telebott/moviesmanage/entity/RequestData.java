@@ -14,6 +14,11 @@ public class RequestData {
     @JsonProperty(value = "data", required = false)
     private String data;
     private String user;
+
+    public JSONObject getData() {
+        return JSONObject.parseObject(data);
+    }
+
     public SystemUser getUser() {
         JSONObject jsonObject = JSONObject.parseObject(user);
         return JSONObject.toJavaObject(jsonObject, SystemUser.class);

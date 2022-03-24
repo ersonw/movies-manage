@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -70,14 +71,23 @@ public class UserService {
         Users _user = JSONObject.toJavaObject(object,Users.class);
         if (_user != null && isUser(_user.getToken())){
             JSONObject _token = JSONObject.parseObject(JSONObject.toJSONString(authDao.findUserByToken(_user.getToken())));
-            for (Map.Entry<String, Object> entry: object.entrySet()) {
-//                if (StringUtils.isNotEmpty(entry.getValue().toString())){
-                    _token.put(entry.getKey(), entry.getValue());
-//                }
-            }
+            _token.putAll(object);
             _user = JSONObject.toJavaObject(_token,Users.class);
             _saveAndPush(_user);
             return _user;
+        }
+        return null;
+    }
+    public Users _change(Users _user){
+        if (_user != null && isUser(_user.getId())){
+            JSONObject object = JSONObject.parseObject(JSONObject.toJSONString(_user));
+            Users user = usersDao.findAllById(_user.getId());
+            if (user != null){
+                JSONObject _token = JSONObject.parseObject(JSONObject.toJSONString(user));
+                _token.putAll(object);
+                _user = JSONObject.toJavaObject(_token,Users.class);
+                return _user;
+            }
         }
         return null;
     }
@@ -141,8 +151,8 @@ public class UserService {
         return object;
     }
 
-    public JSONObject getList(String d) {
-        JSONObject data = JSONObject.parseObject(d);
+    public JSONObject getList(JSONObject data) {
+//        JSONObject data = JSONObject.parseObject(d);
         JSONObject object = new JSONObject();
         int page = 1;
         int limit = 20;
@@ -162,9 +172,7 @@ public class UserService {
             }else {
                 pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
             }
-            if (data.get("title") == null && data.get("status") == null){
-                usersPage = usersDao.findAll(pageable);
-            }else if (StringUtils.isEmpty(data.get("title").toString()) && StringUtils.isEmpty(data.get("status").toString())){
+            if ((data.get("title") == null || StringUtils.isEmpty(data.get("title").toString())) && (data.get("status") == null || StringUtils.isEmpty(data.get("status").toString()))){
                 usersPage = usersDao.findAll(pageable);
             }else if (data.get("title") != null && data.get("status") != null && StringUtils.isNotEmpty(data.get("status").toString())){
                 int status = Integer.parseInt(data.get("status").toString());
@@ -196,6 +204,7 @@ public class UserService {
             jsonObject.put("utime",user.getUtime());
             jsonObject.put("gold",user.getGold());
             jsonObject.put("diamond",user.getDiamond());
+            jsonObject.put("share", getShare(user.getId()));
             long balance = Long.parseLong(getBalance(user).get("balance").toString());
 //            jsonObject.put("balance", 0);
             double b = balance / 100d;
@@ -214,6 +223,80 @@ public class UserService {
             jsonObject.put("bk_image",user.getBkImage());
             jsonObject.put("avatar",user.getAvatar());
             array.add(jsonObject);
+        }
+        object.put("list",array);
+        return object;
+    }
+
+    public boolean delete(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            Users users = usersDao.findAllById(Long.parseLong(data.get("id").toString()));
+            if (users != null){
+                usersDao.delete(users);
+                authDao.removeUser(users);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean update(JSONObject data) {
+        Users user = JSONObject.toJavaObject(data,Users.class);
+        if (data != null && user != null){
+            Users users = usersDao.findAllById(user.getId());
+            if (users != null){
+                users = _change(user);
+                if (users != null){
+                    usersDao.saveAndFlush(users);
+                    authDao.removeUser(users);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    private long getShare(long uid){
+        return usersDao.countAllBySuperior(uid);
+    }
+    public JSONObject superior(JSONObject data) {
+        JSONObject object = new JSONObject();
+        JSONArray array = new JSONArray();
+        if (data != null && data.get("id") != null){
+            Users user = usersDao.findAllById(Long.parseLong(data.get("id").toString()));
+            if (user != null){
+                Users _superior = usersDao.findAllById(user.getSuperior());
+                if (_superior != null){
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("id", _superior.getId());
+                    jsonObject.put("nickname", _superior.getNickname());
+                    jsonObject.put("avatar", _superior.getAvatar());
+                    jsonObject.put("phone", _superior.getPhone());
+                    jsonObject.put("share", getShare(_superior.getId()));
+                    array.add(jsonObject);
+                }
+            }
+        }
+        object.put("list",array);
+        return object;
+    }
+
+    public JSONObject share(JSONObject data) {
+        JSONObject object = new JSONObject();
+        JSONArray array = new JSONArray();
+        if (data != null && data.get("id") != null){
+            Users user = usersDao.findAllById(Long.parseLong(data.get("id").toString()));
+            if (user != null){
+                List<Users> usersList = usersDao.findAllBySuperior(user.getId());
+                for (Users users: usersList) {
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("id", users.getId());
+                    jsonObject.put("nickname", users.getNickname());
+                    jsonObject.put("avatar", users.getAvatar());
+                    jsonObject.put("phone", users.getPhone());
+                    jsonObject.put("share", getShare(users.getId()));
+                    array.add(jsonObject);
+                }
+            }
         }
         object.put("list",array);
         return object;
