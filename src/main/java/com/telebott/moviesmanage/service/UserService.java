@@ -71,7 +71,11 @@ public class UserService {
         Users _user = JSONObject.toJavaObject(object,Users.class);
         if (_user != null && isUser(_user.getToken())){
             JSONObject _token = JSONObject.parseObject(JSONObject.toJSONString(authDao.findUserByToken(_user.getToken())));
-            _token.putAll(object);
+            for (Map.Entry<String, Object> entry: object.entrySet()) {
+                if (entry.getValue() != null){
+                    _token.put(entry.getKey(), entry.getValue());
+                }
+            }
             _user = JSONObject.toJavaObject(_token,Users.class);
             _saveAndPush(_user);
             return _user;
@@ -84,7 +88,11 @@ public class UserService {
             Users user = usersDao.findAllById(_user.getId());
             if (user != null){
                 JSONObject _token = JSONObject.parseObject(JSONObject.toJSONString(user));
-                _token.putAll(object);
+                for (Map.Entry<String, Object> entry: object.entrySet()) {
+                    if (entry.getValue() != null){
+                        _token.put(entry.getKey(), entry.getValue());
+                    }
+                }
                 _user = JSONObject.toJavaObject(_token,Users.class);
                 return _user;
             }
@@ -163,6 +171,9 @@ public class UserService {
             if (data.get("limit") != null) limit = Integer.parseInt(data.get("limit").toString());
             page--;
             if (page < 0) page =0;
+            if (limit < 1){
+                limit = 1;
+            }
             if (data.get("sort") != null){
                 if (data.get("sort").toString().equals("+id")){
                     pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
@@ -189,9 +200,10 @@ public class UserService {
                 usersPage = usersDao.findAllByStatus(status,pageable);
             }
         }else {
+            page--;
             usersPage = usersDao.findAll(pageable);
         }
-        object.put("total",usersPage.getTotalPages());
+        object.put("total",usersPage.getTotalElements());
         JSONArray array = new JSONArray();
         for (Users user: usersPage.getContent()) {
             JSONObject jsonObject = new JSONObject();
