@@ -521,7 +521,7 @@ public class VideosService {
                         VideoOrders orders = videoOrdersDao.findAllByUidAndVid(user.getId(), videos.getId());
                         if (orders == null) {
                             DiamondRecords records = new DiamondRecords();
-                            records.setCtime(System.currentTimeMillis());
+                            records.setAddTime(System.currentTimeMillis());
                             records.setUid(user.getId());
                             records.setReason("购买了付费影片《" + videos.getTitle() + "》");
                             records.setDiamond(-(videos.getDiamond()));
@@ -532,8 +532,8 @@ public class VideosService {
                             orders.setStatus(1);
                             orders.setUid(user.getId());
                             videoOrdersDao.saveAndFlush(orders);
-                            user.setDiamond(user.getDiamond() - videos.getDiamond());
-                            userService._saveAndPush(user);
+//                            user.setDiamond(user.getDiamond() - videos.getDiamond());
+//                            userService._saveAndPush(user);
                         }
                     }
                 } else {
@@ -1165,20 +1165,20 @@ public class VideosService {
                             goldRecords.setGold(shareAwardAmount);
                             goldRecords.setReason(records.getReason() + "奖励：" + goldRecords.getGold() + "金币");
                             goldRecords.setUid(_user.getId());
-                            goldRecords.setCtime(System.currentTimeMillis());
+                            goldRecords.setAddTime(System.currentTimeMillis());
                             goldRecordsDao.saveAndFlush(goldRecords);
-                            _user.setGold(_user.getGold() + goldRecords.getGold());
-                            usersDao.saveAndFlush(_user);
+//                            _user.setGold(_user.getGold() + goldRecords.getGold());
+//                            usersDao.saveAndFlush(_user);
                             records.setReason(goldRecords.getReason());
                         } else if (shareAwardType == 1) {
                             DiamondRecords diamondRecords = new DiamondRecords();
                             diamondRecords.setDiamond(records.getAmount());
                             diamondRecords.setReason(records.getReason() + "奖励：" + diamondRecords.getDiamond() + "钻石");
                             diamondRecords.setUid(_user.getId());
-                            diamondRecords.setCtime(System.currentTimeMillis());
+                            diamondRecords.setAddTime(System.currentTimeMillis());
                             diamondRecordsDao.saveAndFlush(diamondRecords);
-                            _user.setDiamond(_user.getDiamond() + records.getAmount());
-                            usersDao.saveAndFlush(_user);
+//                            _user.setDiamond(_user.getDiamond() + records.getAmount());
+//                            usersDao.saveAndFlush(_user);
                             records.setReason(diamondRecords.getReason());
                         } else if (shareAwardType == 2) {
                             long expireds = CommodityVipOrderService._getAddTime(records.getAmount() + "d", _user.getExpireds());
@@ -1229,19 +1229,19 @@ public class VideosService {
                         goldRecords.setGold(shareAwardAmount);
                         goldRecords.setReason(reason + "奖励：" + goldRecords.getGold() + "金币");
                         goldRecords.setUid(_user.getId());
-                        goldRecords.setCtime(System.currentTimeMillis());
+                        goldRecords.setAddTime(System.currentTimeMillis());
                         goldRecordsDao.saveAndFlush(goldRecords);
-                        _user.setGold(_user.getGold() + shareAwardAmount);
-                        usersDao.saveAndFlush(_user);
+//                        _user.setGold(_user.getGold() + shareAwardAmount);
+//                        usersDao.saveAndFlush(_user);
                     } else if (shareAwardType == 1) {
                         DiamondRecords diamondRecords = new DiamondRecords();
                         diamondRecords.setDiamond(shareAwardAmount);
                         diamondRecords.setReason(reason + "奖励：" + diamondRecords.getDiamond() + "钻石");
                         diamondRecords.setUid(_user.getId());
-                        diamondRecords.setCtime(System.currentTimeMillis());
+                        diamondRecords.setAddTime(System.currentTimeMillis());
                         diamondRecordsDao.saveAndFlush(diamondRecords);
-                        _user.setDiamond(_user.getDiamond() + shareAwardAmount);
-                        usersDao.saveAndFlush(_user);
+//                        _user.setDiamond(_user.getDiamond() + shareAwardAmount);
+//                        usersDao.saveAndFlush(_user);
                     } else if (shareAwardType == 2) {
                         long expireds = CommodityVipOrderService._getAddTime(shareAwardAmount + "d", _user.getExpireds());
                         ExpiredRecords expiredRecords = new ExpiredRecords();

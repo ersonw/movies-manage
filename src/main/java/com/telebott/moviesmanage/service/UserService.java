@@ -36,6 +36,10 @@ public class UserService {
     private SystemConfigService systemConfigService;
     @Autowired
     private ShareRecordsDao shareRecordsDao;
+    @Autowired
+    private DiamondRecordsDao diamondRecordsDao;
+    @Autowired
+    private GoldRecordsDao goldRecordsDao;
 
     public void _save(Users users){
         usersDao.saveAndFlush(users);
@@ -125,8 +129,8 @@ public class UserService {
             object.put("token", users.getToken());
             object.put("phone", users.getPhone());
             object.put("avatar",users.getAvatar());
-            object.put("gold",users.getGold());
-            object.put("diamond", users.getDiamond());
+            object.put("gold", goldRecordsDao.countAllByBalance(users.getId()));
+            object.put("diamond", diamondRecordsDao.countAllByBalance(users.getId()));
             object.put("invite",users.getInvite());
             object.put("superior", users.getSuperior());
             object.put("expired",users.getExpireds());
@@ -150,6 +154,21 @@ public class UserService {
         }
         return object;
     }
+    public long getDiamond(Users user) {
+        long amount = diamondRecordsDao.countAllByUidAndStatus(user.getId(),1);
+        if (amount > 0){
+            return diamondRecordsDao.countAllByBalance(user.getId());
+        }
+        return amount;
+    }
+    public long getGold(Users user) {
+        long amount = goldRecordsDao.countAllByUidAndStatus(user.getId(),1);
+        if (amount > 0){
+            return goldRecordsDao.countAllByBalance(user.getId());
+        }
+        return amount;
+    }
+
     public JSONObject getShareCount(Users user) {
         JSONObject object = new JSONObject();
 //        object.put("count",usersDao.countAllBySuperior(user.getId()));
@@ -214,8 +233,8 @@ public class UserService {
             jsonObject.put("birthday",user.getBirthday());
             jsonObject.put("ctime",user.getCtime());
             jsonObject.put("utime",user.getUtime());
-            jsonObject.put("gold",user.getGold());
-            jsonObject.put("diamond",user.getDiamond());
+            jsonObject.put("gold", getGold(user));
+            jsonObject.put("diamond", getDiamond(user));
             jsonObject.put("share", getShare(user.getId()));
             long balance = Long.parseLong(getBalance(user).get("balance").toString());
 //            jsonObject.put("balance", 0);
