@@ -192,11 +192,12 @@ public class APPConfigService {
 //            boolean autoLogin = data.getBoolean("forces");
             MoblieConfig config = new MoblieConfig();
             config.setVersion(data.getString("version"));
+            config.setText(data.getString("text"));
             config.setHash(md5Util.getMD5(Long.toString(time)));
             config.setAddTime(time);
             config.setUpdateTime(time);
-            config.setForces(data.getInteger("version"));
-            config.setAutoLogin(data.getInteger("version"));
+            config.setForces(data.getInteger("forces"));
+            config.setAutoLogin(data.getInteger("autoLogin"));
             moblieConfigDao.saveAndFlush(config);
             return true;
         }

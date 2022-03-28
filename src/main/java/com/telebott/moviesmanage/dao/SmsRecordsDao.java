@@ -1,6 +1,8 @@
 package com.telebott.moviesmanage.dao;
 
 import com.telebott.moviesmanage.entity.SmsRecords;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SmsRecordsDao extends JpaRepository<SmsRecords, Integer>, CrudRepository<SmsRecords, Integer> {
     SmsRecords findAllByData(String data);
+    Page<SmsRecords> findAllByNumberLike(String n, Pageable pageable);
     @Query(value = "SELECT COUNT(*) FROM `sms_records` where number =:phone and ctime > :cTime", nativeQuery = true)
     Long countTodayMax(@Param(value = "cTime")long cTime,@Param(value = "phone") String phone);
     SmsRecords findAllById(int id);

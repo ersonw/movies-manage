@@ -3,6 +3,8 @@ package com.telebott.moviesmanage.service;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.telebott.moviesmanage.dao.*;
+import com.telebott.moviesmanage.entity.MoblieConfig;
+import com.telebott.moviesmanage.entity.SmsRecords;
 import com.telebott.moviesmanage.entity.Users;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +42,8 @@ public class UserService {
     private DiamondRecordsDao diamondRecordsDao;
     @Autowired
     private GoldRecordsDao goldRecordsDao;
+    @Autowired
+    private SmsRecordsDao smsRecordsDao;
 
     public void _save(Users users){
         usersDao.saveAndFlush(users);
@@ -329,6 +333,48 @@ public class UserService {
                 }
             }
         }
+        object.put("list",array);
+        return object;
+    }
+
+    public JSONObject getSmsRecordsList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        String title = null;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<SmsRecords> smsRecordsPage;
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            if (data.get("sort") != null){
+                if (data.getString("sort").equals("+id")){
+                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+                }else {
+                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "id"));
+                }
+            }
+            if (StringUtils.isNotEmpty(data.getString("title"))){
+                title = "%"+data.getString("title")+"%";
+                smsRecordsPage = smsRecordsDao.findAllByNumberLike(title,pageable);
+            }else {
+                smsRecordsPage = smsRecordsDao.findAll(pageable);
+            }
+        }else {
+            smsRecordsPage = smsRecordsDao.findAll(pageable);
+        }
+        JSONArray array = new JSONArray();
+        for ( SmsRecords records : smsRecordsPage.getContent()) {
+            JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(records));
+            array.add(jsonObject);
+        }
+        object.put("total", smsRecordsPage.getTotalElements());
         object.put("list",array);
         return object;
     }

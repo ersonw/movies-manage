@@ -51,4 +51,10 @@ public class UsersControl {
         data.setData(userService.share(requestData.getData()));
         return data;
     }
+    @GetMapping("/getSmsRecordsList")
+    public ResultData getSmsRecordsList(@ModelAttribute RequestData requestData){
+        ResultData data = new ResultData();
+        data.setData(userService.getSmsRecordsList(requestData.getData()));
+        return data;
+    }
 }
