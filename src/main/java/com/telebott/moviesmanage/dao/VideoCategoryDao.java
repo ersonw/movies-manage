@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface VideoCategoryDao extends JpaRepository<VideoCategory, Integer>, CrudRepository<VideoCategory, Integer> {
     VideoCategory findAllById(long id);
+    VideoCategory findAllByName(String name);
     List<VideoCategory> findAllByStatus(int status);
 }

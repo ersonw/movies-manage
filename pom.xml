@@ -11,7 +11,7 @@
     <groupId>com.telebott</groupId>
     <artifactId>movies-manage</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>movies-manage</name>
     <description>movies-manage</description>
     <properties>

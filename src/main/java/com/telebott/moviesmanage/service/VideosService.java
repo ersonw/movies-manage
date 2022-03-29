@@ -170,7 +170,7 @@ public class VideosService {
         videos.setVodContent(videos.getTitle());
         videos.setStatus(1);
         if (StringUtils.isNotEmpty(yzmData.getCategory())) {
-            VideoCategory category = videoCategoryDao.findAllById(Long.parseLong(yzmData.getCategory()));
+            VideoCategory category = videoCategoryDao.findAllByName(yzmData.getCategory());
             if (category != null) {
                 videos.setVodClass(category.getId());
             }
@@ -1285,5 +1285,61 @@ public class VideosService {
         object.put("list",array);
 //        System.out.println(TimeUtil.getTodayZero());
         return object;
+    }
+
+    public JSONObject getList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        String title = null;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<Videos> videosPage;
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            if (data.get("sort") != null){
+                if (data.getString("sort").equals("+id")){
+                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+                }else {
+                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "id"));
+                }
+            }
+            if (StringUtils.isNotEmpty(data.getString("title"))){
+                title = "%"+data.getString("title")+"%";
+                videosPage = videosDao.findAllByTitle(title,pageable);
+            }else {
+                videosPage = videosDao.findAll(pageable);
+            }
+        }else {
+            videosPage = videosDao.findAll(pageable);
+        }
+        JSONArray array = new JSONArray();
+        for ( Videos video : videosPage.getContent()) {
+            JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(video));
+//            jsonObject.put("forces", config.getForces() == 1);
+//            jsonObject.put("autoLogin", config.getAutoLogin() == 1);
+            jsonObject.put("user", null);
+            Users user = usersDao.findAllById(video.getUid());
+            if (user != null){
+                JSONObject userObject = new JSONObject();
+                userObject.put("id",user.getId());
+                userObject.put("nickname", user.getNickname());
+                jsonObject.put("user",userObject);
+            }
+            array.add(jsonObject);
+        }
+        object.put("total", videosPage.getTotalElements());
+        object.put("list",array);
+        return object;
+    }
+
+    public boolean delete(JSONObject data) {
+        return false;
     }
 }
