@@ -1428,14 +1428,15 @@ public class VideosService {
             if (video.getRecommends() == 0){
                 jsonObject.put("recommends",videoRecommendsDao.countAllByVid(video.getId()));
             }
-            jsonObject.put("user", null);
+            JSONObject userObject = new JSONObject();
+            userObject.put("id",null);
+            userObject.put("nickname", null);
             Users user = usersDao.findAllById(video.getUid());
             if (user != null){
-                JSONObject userObject = new JSONObject();
                 userObject.put("id",user.getId());
                 userObject.put("nickname", user.getNickname());
-                jsonObject.put("user",userObject);
             }
+            jsonObject.put("user",userObject);
             array.add(jsonObject);
         }
         object.put("total", videosPage.getTotalElements());
