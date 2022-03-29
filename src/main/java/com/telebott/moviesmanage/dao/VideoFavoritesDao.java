@@ -4,6 +4,8 @@ import com.telebott.moviesmanage.entity.VideoFavorites;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +15,7 @@ public interface VideoFavoritesDao extends JpaRepository<VideoFavorites, Integer
     VideoFavorites findAllByUidAndVid(long uid, long vid);
     Page<VideoFavorites> findAllByUid(long uid, Pageable pageable);
     Page<VideoFavorites> findAllByVid(long vid, Pageable pageable);
+    @Modifying
+    @Query(value = "DELETE FROM `video_favorites` WHERE `vid`=:vid", nativeQuery = true)
+    void deleteAllByVid(long vid);
 }

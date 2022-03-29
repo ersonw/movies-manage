@@ -48,5 +48,10 @@ public interface VideosDao extends JpaRepository<Videos, Integer>, CrudRepositor
     @Query(value = "SELECT v.id,v.uid,v.title,v.numbers,v.pic_thumb,v.gif_thumb,v.vod_time_add,v.vod_time_update,v.vod_class,v.vod_duration,v.vod_play_url,v.vod_content,v.vod_down_url,v.share_id,v.vod_tag,v.actor,v.diamond,v.status,v.play,v.recommends,(IF(v.play > 0,v.play,(SELECT COUNT(*) FROM video_play vp WHERE vp.vid=v.id)))AS c FROM video_actors AS va LEFT JOIN videos v ON v.actor=va.id and v.status=1 WHERE va.id=:aid ORDER BY c DESC LIMIT :page,:limit", nativeQuery = true)
     List<Videos> getPlay(long aid, int page, int limit);
     Page<Videos> findAllByActorAndStatus(long aid, int status,Pageable pageable);
-    Page<Videos> findAllByTitle(String title, Pageable pageable);
+    Page<Videos> findAllByTitleLikeOrUid(String title, long uid, Pageable pageable);
+    @Query(value = "select * from videos where (title like %:title% or uid = :title) and vod_class = :cid", nativeQuery = true)
+    Page<Videos> findAllByClass(String title, long cid, Pageable pageable);
+    Page<Videos> findAllByVodClass(long cid, Pageable pageable);
+
+    Page<Videos> findAllByActor(long id, Pageable pageable);
 }

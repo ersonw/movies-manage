@@ -44,13 +44,7 @@ public class APPConfigService {
             page--;
             if (page<0) page =0;
             pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
-            if (data.get("sort") != null){
-                if (data.getString("sort").equals("+id")){
-                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
-                }else {
-                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "id"));
-                }
-            }
+            pageable = VideosService.getPageable(data, page, limit, pageable);
             if (StringUtils.isNotEmpty(data.getString("title"))){
                 title = "%"+data.getString("title")+"%";
                 systemConfigPage = systemConfigDao.findAllByNameLikeOrDesLike(title,title,pageable);
@@ -132,13 +126,7 @@ public class APPConfigService {
             page--;
             if (page<0) page =0;
             pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
-            if (data.get("sort") != null){
-                if (data.getString("sort").equals("+id")){
-                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
-                }else {
-                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "id"));
-                }
-            }
+            pageable = VideosService.getPageable(data, page, limit, pageable);
             if (StringUtils.isNotEmpty(data.getString("title"))){
                 title = "%"+data.getString("title")+"%";
                 moblieConfigPage = moblieConfigDao.findAllByVersionLike(title,pageable);

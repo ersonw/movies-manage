@@ -4,6 +4,7 @@ import com.telebott.moviesmanage.entity.VideoRecommends;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -30,5 +31,7 @@ public interface VideoRecommendsDao extends JpaRepository<VideoRecommends, Integ
     VideoRecommends getFirst(long vid);
     @Query(value = "SELECT vr.id,vr.uid,vr.vid,vr.reason,vr.status,vr.add_time,(SELECT COUNT(*) FROM recommend_likes AS vl WHERE vl.rid = vr.id) AS c FROM `video_recommends` AS vr WHERE vr.vid=:vid ORDER BY c DESC  LIMIT :page,:limit", nativeQuery = true)
     List<VideoRecommends> getAllComments(long vid, int page, int limit);
-
+    @Modifying
+    @Query(value = "DELETE FROM video_recommends WHERE vid=:vid", nativeQuery = true)
+    void deleteAllByVid(long vid);
 }
