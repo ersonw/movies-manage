@@ -4,14 +4,16 @@ import com.telebott.moviesmanage.entity.Videos;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
+@Transactional
 @Repository
-public interface VideosDao extends JpaRepository<Videos, Integer>, CrudRepository<Videos, Integer> {
+public interface VideosDao extends JpaRepository<Videos, Long>, CrudRepository<Videos, Long> {
     Videos findAllById(long id);
     Videos findAllByIdAndStatus(long id, int status);
 //    Page<Videos> findAllByUidAndStatus(long uid, int status, Pageable pageable);
@@ -52,6 +54,10 @@ public interface VideosDao extends JpaRepository<Videos, Integer>, CrudRepositor
     @Query(value = "select * from videos where (title like %:title% or uid = :title) and vod_class = :cid", nativeQuery = true)
     Page<Videos> findAllByClass(String title, long cid, Pageable pageable);
     Page<Videos> findAllByVodClass(long cid, Pageable pageable);
-
+    @Modifying
+    @Query(value = "UPDATE `videos` SET actor=0 WHERE actor=:aid", nativeQuery = true)
+    void removeAllByAid(long aid);
     Page<Videos> findAllByActor(long id, Pageable pageable);
+
+    Page<Videos> findAllByActorAndTitleLike(long i, String title, Pageable pageable);
 }

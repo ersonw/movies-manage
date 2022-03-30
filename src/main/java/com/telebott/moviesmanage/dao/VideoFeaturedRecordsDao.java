@@ -16,6 +16,8 @@ import java.util.List;
 public interface VideoFeaturedRecordsDao extends JpaRepository<VideoFeaturedRecords, Integer>, CrudRepository<VideoFeaturedRecords, Integer> {
     List<VideoFeaturedRecords> findAllByFid(long fid);
     Page<VideoFeaturedRecords> findAllByFid(long fid, Pageable pageable);
+    VideoFeaturedRecords findAllById(long id);
+    VideoFeaturedRecords findAllByFidAndVid(long fid, long vid);
     @Query(value = "SELECT r.id,r.vid,r.fid,r.add_time,(IF(v.play > 0,v.play,(SELECT COUNT(*) FROM video_play AS vp WHERE vp.vid = v.id))) AS c FROM `video_featured_records` as r LEFT JOIN videos v on v.id = r.vid ORDER BY c DESC  LIMIT :page,:limit", nativeQuery = true)
     List<VideoFeaturedRecords> findHots(int page, int limit);
     @Query(value = "SELECT r.id,r.vid,r.fid,r.add_time,(IF(v.play > 0,v.play,(SELECT COUNT(*) FROM video_play AS vp WHERE vp.vid = v.id))) AS c FROM `video_featured_records` as r LEFT JOIN videos v on v.id = r.vid where r.fid=:id ORDER BY c DESC  LIMIT :page,:limit", nativeQuery = true)
@@ -23,4 +25,7 @@ public interface VideoFeaturedRecordsDao extends JpaRepository<VideoFeaturedReco
     @Modifying
     @Query(value = "DELETE FROM `video_featured_records` WHERE `vid`=:vid", nativeQuery = true)
     void deleteAllByVid(long vid);
+    @Modifying
+    @Query(value = "DELETE FROM `video_featured_records` WHERE `fid`=:fid", nativeQuery = true)
+    void deleteAllByFid(long fid);
 }

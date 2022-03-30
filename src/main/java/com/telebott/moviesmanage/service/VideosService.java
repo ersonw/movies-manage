@@ -74,7 +74,7 @@ public class VideosService {
     @Autowired
     private ExpiredRecordsDao expiredRecordsDao;
     @Autowired
-    private CommodityVipOrderService commodityVipOrderService;
+    private VideoFeaturedsDao videoFeaturedsDao;
     @Autowired
     private VideoFeaturedRecordsDao videoFeaturedRecordsDao;
 
@@ -1346,6 +1346,7 @@ public class VideosService {
         JSONArray array = new JSONArray();
         getVideoPage(object, array, videosPage);
         object.put("list",array);
+//        object.put("total",videosPage.getTotalElements());
         return object;
     }
 
@@ -1472,5 +1473,429 @@ public class VideosService {
             return true;
         }
         return false;
+    }
+
+    public JSONObject getClassList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        String title = null;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<VideoCategory> categoryPage;
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            if (data.get("title") != null && StringUtils.isNotEmpty(data.getString("title"))){
+                title = "%"+data.getString("title")+"%";
+                categoryPage = videoCategoryDao.findAllByNameLike(title, pageable);
+            }else {
+                categoryPage = videoCategoryDao.findAll(pageable);
+            }
+        }else {
+            categoryPage = videoCategoryDao.findAll(pageable);
+        }
+        object.put("list",categoryPage.getContent());
+        object.put("total",categoryPage.getTotalElements());
+        return object;
+    }
+
+    public boolean addClass(JSONObject data) {
+        int status = 0;
+        if (data != null && data.get("name") != null && StringUtils.isNotEmpty(data.getString("name"))){
+            if (data.get("status") != null && StringUtils.isNotEmpty(data.getString("status"))) status = data.getInteger("status");
+            VideoCategory category = new VideoCategory();
+            category.setStatus(status);
+            category.setName(data.getString("name"));
+            category.setAddTime(System.currentTimeMillis());
+            VideoCategory videoCategory = videoCategoryDao.findAllByName(category.getName());
+            if (videoCategory == null){
+                videoCategoryDao.saveAndFlush(category);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean updateClass(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            VideoCategory category = videoCategoryDao.findAllById(data.getLong("id"));
+            if (category != null){
+                if (data.get("status") != null && StringUtils.isNotEmpty(data.get("status").toString())) category.setStatus(data.getInteger("status"));
+                if (data.get("name") != null && StringUtils.isNotEmpty(data.get("name").toString())) category.setName(data.getString("name"));
+                category.setAddTime(System.currentTimeMillis());
+                videoCategoryDao.saveAndFlush(category);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean deleteClass(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            VideoCategory category = videoCategoryDao.findAllById(data.getLong("id"));
+            if (category != null){
+                videoCategoryDao.delete(category);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public JSONObject getBoutiqueList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        String title = null;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<VideoFeatureds> featuredsPage;
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            if (data.get("title") != null && StringUtils.isNotEmpty(data.getString("title"))){
+                title = "%"+data.getString("title")+"%";
+                featuredsPage = videoFeaturedsDao.findAllByIdOrTitleLike(data.getLong("title"), title, pageable);
+            }else {
+                featuredsPage = videoFeaturedsDao.findAll(pageable);
+            }
+        }else {
+            featuredsPage = videoFeaturedsDao.findAll(pageable);
+        }
+        JSONArray array = new JSONArray();
+        for (VideoFeatureds feature : featuredsPage.getContent()) {
+            List<VideoFeaturedRecords> records = videoFeaturedRecordsDao.findAllByFid(feature.getId());
+            JSONArray jsonArray = new JSONArray();
+            if (records.size() > 0){
+                for (VideoFeaturedRecords record: records) {
+                    Videos video = videosDao.findAllById(record.getVid());
+                    if (video != null){
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put("id",record.getId());
+                        jsonObject.put("vid",video.getId());
+                        jsonObject.put("title",video.getTitle());
+                        jsonObject.put("picThumb",video.getPicThumb());
+                        jsonArray.add(jsonObject);
+                    }
+                }
+            }
+            JSONObject d = new JSONObject();
+            d.put("id", feature.getId());
+            d.put("title", feature.getTitle());
+            d.put("status", feature.getStatus());
+            d.put("addTime", feature.getAddTime());
+            d.put("records", jsonArray);
+            array.add(d);
+        }
+        object.put("list",array);
+        object.put("total",featuredsPage.getTotalElements());
+        return object;
+    }
+
+    public boolean addBoutique(JSONObject data) {
+        int status = 0;
+        if (data != null && data.get("title") != null){
+            if (data.get("status") != null && StringUtils.isNotEmpty(data.getString("status"))) status = data.getInteger("status");
+            VideoFeatureds feature = videoFeaturedsDao.findAllByTitle(data.getString("title"));
+            if (feature == null){
+                feature = new VideoFeatureds();
+                feature.setAddTime(System.currentTimeMillis());
+                feature.setStatus(status);
+                feature.setTitle(data.getString("title"));
+                videoFeaturedsDao.saveAndFlush(feature);
+                if (data.get("records") != null){
+                    JSONArray array = JSONArray.parseArray(data.getString("records"));
+                    for (Object object: array) {
+                        JSONObject o = JSONObject.parseObject(JSONObject.toJSONString(object));
+                        if (StringUtils.isNotEmpty(o.getString("vid"))){
+                            Videos video = videosDao.findAllById(o.getLong("vid"));
+                            if (video != null){
+                                VideoFeaturedRecords record = new VideoFeaturedRecords();
+                                record.setAddTime(System.currentTimeMillis());
+                                record.setVid(video.getId());
+                                record.setFid(feature.getId());
+                                videoFeaturedRecordsDao.saveAndFlush(record);
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean updateBoutique(JSONObject data) {
+        if (data != null){
+            if (StringUtils.isNotEmpty(data.getString("id"))){
+                VideoFeatureds feature = videoFeaturedsDao.findAllById(data.getLong("id"));
+                if (feature != null){
+                    feature.setAddTime(System.currentTimeMillis());
+                    if (StringUtils.isNotEmpty(data.getString("title"))) feature.setTitle(data.getString("title"));
+                    if (StringUtils.isNotEmpty(data.getString("status"))) feature.setStatus(data.getInteger("status"));
+                    videoFeaturedsDao.saveAndFlush(feature);
+                    if (StringUtils.isNotEmpty(data.getString("records"))){
+                        JSONArray array = JSONArray.parseArray(data.getString("records"));
+                        for (Object o: array) {
+                            JSONObject object = JSONObject.parseObject(JSONObject.toJSONString(o));
+                            if (object.get("vid") != null){
+                                Videos video = videosDao.findAllById(object.getLong("vid"));
+                                if (video != null){
+                                    if (object.get("id") != null){
+                                        VideoFeaturedRecords record = videoFeaturedRecordsDao.findAllById(object.getLong("id"));
+                                        if (record == null){
+                                            record = new VideoFeaturedRecords();
+                                            record.setFid(feature.getId());
+                                            record.setVid(video.getId());
+                                            record.setAddTime(System.currentTimeMillis());
+                                            videoFeaturedRecordsDao.saveAndFlush(record);
+                                        }
+                                    }else {
+                                        VideoFeaturedRecords record = videoFeaturedRecordsDao.findAllByFidAndVid(feature.getId(),video.getId());
+                                        if (record == null){
+                                            record = new VideoFeaturedRecords();
+                                            record.setFid(feature.getId());
+                                            record.setVid(video.getId());
+                                            record.setAddTime(System.currentTimeMillis());
+                                            videoFeaturedRecordsDao.saveAndFlush(record);
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean deleteRecord(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            VideoFeaturedRecords records = videoFeaturedRecordsDao.findAllById(data.getLong("id"));
+            if (records != null){
+                videoFeaturedRecordsDao.delete(records);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean deleteBoutique(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            VideoFeatureds feature = videoFeaturedsDao.findAllById(data.getLong("id"));
+            if (feature != null){
+                videoFeaturedRecordsDao.deleteAllByFid(data.getLong("id"));
+                videoFeaturedsDao.delete(feature);
+                return true;
+            }
+        }
+        return false;
+    }
+    public JSONObject getActorVideoList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        page--;
+        if (page<0) page =0;
+        JSONArray array = new JSONArray();
+        if (data != null && data.get("id") != null) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            VideoActors actor = videoActorsDao.findAllById(data.getLong("id"));
+            if (actor != null){
+                Page<Videos> videosPage = videosDao.findAllByActor(actor.getId(),pageable);
+                object.put("total",videosPage.getTotalElements());
+                for (Videos video: videosPage.getContent()) {
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("id",video.getId());
+                    jsonObject.put("title",video.getTitle());
+                    jsonObject.put("picThumb",video.getPicThumb());
+                    array.add(jsonObject);
+                }
+            }
+        }
+        object.put("list",array);
+        return object;
+    }
+    public JSONObject getActorList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        String title = null;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<VideoActors> actorsPage;
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            if (data.get("title") != null && StringUtils.isNotEmpty(data.getString("title"))){
+                title = "%"+data.getString("title")+"%";
+                actorsPage = videoActorsDao.findAllByNameLike(title, pageable);
+            }else {
+                actorsPage = videoActorsDao.findAll(pageable);
+            }
+        }else {
+            actorsPage = videoActorsDao.findAll(pageable);
+        }
+        JSONArray array = new JSONArray();
+        for (VideoActors actor : actorsPage.getContent()) {
+            JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(actor));
+            JSONObject actorVideos = new JSONObject();
+            actorVideos.put("id",actor.getId());
+            actorVideos = getActorVideoList(actorVideos);
+            jsonObject.put("videos",actorVideos);
+            array.add(jsonObject);
+        }
+        object.put("list",array);
+        object.put("total",actorsPage.getTotalElements());
+        return object;
+    }
+
+    public JSONObject getMeasurements(JSONObject data) {
+        List<ActorMeasurements> measurements = actorMeasurementsDao.findAll();
+        JSONObject object = new JSONObject();
+        object.put("total",measurements.size());
+        object.put("list", measurements);
+        return object;
+    }
+
+    public boolean removeActorVideo(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            Videos video = videosDao.findAllById(data.getLong("id"));
+            if (video != null){
+                video.setActor(0);
+                videosDao.saveAndFlush(video);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean addActor(JSONObject data) {
+        if (data != null && data.get("name") != null && data.get("avatar") != null){
+            int status = 0;
+            long mid = 0;
+            if (data.get("status") != null) status = (data.getInteger("status"));
+            if (data.get("measurements") != null) {
+                ActorMeasurements measurement = actorMeasurementsDao.findAllById(data.getLong("measurements"));
+                if (measurement != null) mid = measurement.getId();
+            }
+            VideoActors actor = videoActorsDao.findAllByName(data.getString("name"));
+            if (actor == null){
+                actor = new VideoActors();
+                actor.setAddTime(System.currentTimeMillis());
+                actor.setUpdateTime(actor.getAddTime());
+                actor.setName(data.getString("name"));
+                actor.setStatus(status);
+                actor.setAvatar(data.getString("avatar"));
+                actor.setMeasurements(mid);
+                videoActorsDao.saveAndFlush(actor);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean deleteActor(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            VideoActors actor = videoActorsDao.findAllById(data.getLong("id"));
+            if (actor != null){
+                videosDao.removeAllByAid(actor.getId());
+                videoCollectsDao.deleteAllByAid(actor.getId());
+                videoActorsDao.delete(actor);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean updateActor(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            VideoActors actor = videoActorsDao.findAllById(data.getLong("id"));
+            if (actor != null){
+                if(data.get("status") != null) actor.setStatus(data.getInteger("status"));
+                if(data.get("avatar") != null) actor.setAvatar(data.getString("avatar"));
+                if(data.get("name") != null) actor.setName(data.getString("name"));
+                if(data.get("measurements") != null) {
+                    ActorMeasurements measurement = actorMeasurementsDao.findAllById(data.getLong("measurements"));
+                    if (measurement != null){
+                        actor.setMeasurements(measurement.getId());
+                    }
+                }
+                videoActorsDao.saveAndFlush(actor);
+                if (StringUtils.isNotEmpty(data.getString("videos"))){
+                    JSONObject videos = JSONObject.parseObject(data.getString("videos"));
+                    if (videos != null && videos.get("list") != null && StringUtils.isNotEmpty(videos.getString("list"))){
+                        JSONArray array = JSONArray.parseArray(videos.getString("list"));
+                        for (Object o: array) {
+                            JSONObject object = JSONObject.parseObject(JSONObject.toJSONString(o));
+                            if (object.get("id") != null){
+                                Videos video = videosDao.findAllById(object.getLong("id"));
+                                if (video != null && video.getActor() != actor.getId()){
+                                    video.setActor(actor.getId());
+                                    videosDao.saveAndFlush(video);
+                                }
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public JSONObject getUnActorVideos(JSONObject data) {
+        JSONObject object = new JSONObject();
+        JSONArray array = new JSONArray();
+        int page = 1;
+        int limit = 20;
+        String title = null;
+        page--;
+        if (page<0) page =0;
+        if (data != null) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            Page<Videos> videosPage ;
+            if (data.get("title") == null || StringUtils.isEmpty(data.getString("title"))){
+                videosPage = videosDao.findAllByActor(0, pageable);
+            }else {
+                videosPage = videosDao.findAllByActorAndTitleLike(0,"%"+data.getString("title")+"%", pageable);
+            }
+            getVideoPage(object,array,videosPage);
+        }
+        object.put("list",array);
+        return object;
     }
 }
