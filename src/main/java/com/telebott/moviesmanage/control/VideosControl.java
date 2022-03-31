@@ -13,6 +13,39 @@ import org.springframework.web.bind.annotation.*;
 public class VideosControl {
     @Autowired
     private VideosService videosService;
+
+    @GetMapping("/getWolfFriendList")
+    public ResultData getWolfFriendList(@ModelAttribute RequestData requestData){
+        ResultData data = new ResultData();
+        data.setData(videosService.getWolfFriendList(requestData.getData()));
+        return data;
+    }
+    @GetMapping("/getRecommendVideoList")
+    public ResultData getRecommendVideoList(@ModelAttribute RequestData requestData){
+        ResultData data = new ResultData();
+        data.setData(videosService.getRecommendVideoList(requestData.getData()));
+        return data;
+    }
+    @PostMapping("/removeWolfUser")
+    public ResultData removeWolfUser(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!videosService.removeWolfUser(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("修改失败！演员不存在");
+        }
+        return data;
+    }
+    @PostMapping("/deleteWolf")
+    public ResultData deleteWolf(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!videosService.deleteWolf(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("修改失败！演员不存在");
+        }
+        return data;
+    }
     @GetMapping("/getUnActorVideos")
     public ResultData getUnActorVideos(@ModelAttribute RequestData requestData){
         ResultData data = new ResultData();

@@ -1737,6 +1737,39 @@ public class VideosService {
         object.put("list",array);
         return object;
     }
+    public JSONObject getRecommendVideoList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        page--;
+        if (page<0) page =0;
+        JSONArray array = new JSONArray();
+        if (data != null && data.get("id") != null) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            Videos video = videosDao.findAllById(data.getLong("id"));
+            if (video != null){
+                Page<VideoRecommends> recommendsPage = videoRecommendsDao.findAllByVid(video.getId(),pageable);
+                object.put("total",recommendsPage.getTotalElements());
+                for (VideoRecommends recommend :recommendsPage.getContent()) {
+                    Users user = usersDao.findAllById(recommend.getUid());
+                    if (user != null){
+                        JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(recommend));
+                        jsonObject.put("user", user);
+                        jsonObject.put("likes", recommendLikesDao.countAllByRid(recommend.getId()));
+                        array.add(jsonObject);
+                    }
+                }
+            }
+        }
+        object.put("list",array);
+        return object;
+    }
     public JSONObject getActorList(JSONObject data) {
         JSONObject object = new JSONObject();
         int page = 1;
@@ -1897,5 +1930,69 @@ public class VideosService {
         }
         object.put("list",array);
         return object;
+    }
+
+    public JSONObject getWolfFriendList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        String title = null;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<VideoRecommends> recommendsPage;
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+        }
+        recommendsPage = videoRecommendsDao.getAllByAll(pageable);
+        JSONArray array = new JSONArray();
+        for (VideoRecommends recommend : recommendsPage.getContent()) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("id",recommend.getId());
+            jsonObject.put("status",recommend.getStatus());
+            jsonObject.put("addTime",recommend.getAddTime());
+            Videos video = videosDao.findAllById(recommend.getVid());
+            if (video != null){
+                jsonObject.put("title",video.getTitle());
+                jsonObject.put("picThumb",video.getPicThumb());
+                JSONObject recommends = new JSONObject();
+                recommends.put("id",recommend.getVid());
+                recommends = getRecommendVideoList(recommends);
+                jsonObject.put("recommends",recommends);
+                array.add(jsonObject);
+            }
+        }
+        object.put("list",array);
+        object.put("total",recommendsPage.getTotalElements());
+        return object;
+    }
+
+    public boolean removeWolfUser(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            VideoRecommends recommend = videoRecommendsDao.findAllById(data.getLong("id"));
+            if (recommend != null){
+                recommendLikesDao.deleteAllByRid(recommend.getId());
+                videoRecommendsDao.delete(recommend);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean deleteWolf(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            VideoRecommends recommend = videoRecommendsDao.findAllById(data.getLong("id"));
+            if (recommend != null){
+                videoRecommendsDao.deleteAllByVid(recommend.getVid());
+                return true;
+            }
+        }
+        return false;
     }
 }

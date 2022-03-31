@@ -17,6 +17,7 @@ public interface VideoRecommendsDao extends JpaRepository<VideoRecommends, Integ
     Long countAllByVid(long vid);
     Long countAllByUid(long uid);
     Page<VideoRecommends> findAllByUidAndStatus(long uid, int status, Pageable pageable);
+    Page<VideoRecommends> findAllByVid(long vid, Pageable pageable);
     VideoRecommends findAllById(long id);
     VideoRecommends findAllByUidAndVid(long uid, long vid);
     Page<VideoRecommends> findAllByVidAndStatus(long vid, int status, Pageable pageable);
@@ -33,6 +34,6 @@ public interface VideoRecommendsDao extends JpaRepository<VideoRecommends, Integ
     @Query(value = "SELECT vr.id,vr.uid,vr.vid,vr.reason,vr.status,vr.add_time,(SELECT COUNT(*) FROM recommend_likes AS vl WHERE vl.rid = vr.id) AS c FROM `video_recommends` AS vr WHERE vr.vid=:vid ORDER BY c DESC  LIMIT :page,:limit", nativeQuery = true)
     List<VideoRecommends> getAllComments(long vid, int page, int limit);
     @Modifying
-    @Query(value = "DELETE FROM video_recommends WHERE vid=:vid", nativeQuery = true)
+    @Query(value = "DELETE video_recommends,recommend_likes FROM video_recommends LEFT JOIN recommend_likes ON video_recommends.id=recommend_likes.rid WHERE video_recommends.vid=:vid", nativeQuery = true)
     void deleteAllByVid(long vid);
 }

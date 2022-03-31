@@ -3,10 +3,7 @@ package com.telebott.moviesmanage.control;
 import com.alibaba.fastjson.JSONObject;
 import com.telebott.moviesmanage.dao.SystemConfigDao;
 import com.telebott.moviesmanage.entity.*;
-import com.telebott.moviesmanage.service.SystemConfigService;
-import com.telebott.moviesmanage.service.SystemUserService;
-import com.telebott.moviesmanage.service.UserService;
-import com.telebott.moviesmanage.service.VideosService;
+import com.telebott.moviesmanage.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +21,7 @@ public class ApiControl {
     @Autowired
     private SystemUserService systemUserService;
     @Autowired
-    private UserService userService;
+    private OnlineOrderService onlineOrderService;
     @Autowired
     private VideosService videosService;
     @GetMapping("/test")
@@ -73,6 +70,32 @@ public class ApiControl {
         }
         return data;
     }
+    @PostMapping("/toPayNotify")
+    public String toPayNotify(@ModelAttribute ToPayNotify payNotify){
+        if(onlineOrderService.handlerToPayNotify(payNotify)){
+            return "success";
+        }
+        return "fail";
+    }
+    @RequestMapping("/toPay")
+    public String toPay(@ModelAttribute ToPayNotify payNotify){
+        return "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "    <meta charset=\"utf-8\">\n" +
+                "</head>\n" +
+                "<script type=\"text/javascript\">\n" +
+                "\n" +
+                "    function run(){\n" +
+                "        document.getElementById(\"sp\").click();\n" +
+                "    }\n" +
+                "</script>\n" +
+                "<body οnlοad=\"run()\">\n" +
+                "<a href=\"moviescheme://123\">打开应用<h1 id=\"sp\"></h1></a>\n" +
+                "</body>\n" +
+                "</html>";
+    }
+
     @PostMapping("/login")
     public ResultData login(@RequestBody LoginData loginData){
         ResultData data = new ResultData();

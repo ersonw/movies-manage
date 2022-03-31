@@ -6,6 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ShowPayDao  extends JpaRepository<ShowPay, Integer>, CrudRepository<ShowPay, Integer> {
+public interface ShowPayDao extends JpaRepository<ShowPay, Integer>, CrudRepository<ShowPay, Integer> {
     ShowPay findAllById(long id);
+    ShowPay findAllByMchId(String mid);
 }
