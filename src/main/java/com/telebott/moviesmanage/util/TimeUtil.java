@@ -75,6 +75,9 @@ public class TimeUtil {
         if (time > 0) return time;
         return getTodayZero();
     }
+    public static long dayToTimeOnly(String date){
+        return (new SimpleDateFormat("yyyy-MM-dd")).parse(new SimpleDateFormat("yyyy-MM-dd").format(new Date(Long.parseLong(date))), new ParsePosition(0)).getTime();
+    }
     public static long manyDaysBefore(int days) {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.DAY_OF_YEAR, calendar.get(Calendar.DAY_OF_YEAR) - days);

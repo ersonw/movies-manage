@@ -18,6 +18,7 @@ public interface VideoFavoritesDao extends JpaRepository<VideoFavorites, Integer
     VideoFavorites findAllByUidAndVid(long uid, long vid);
     Page<VideoFavorites> findAllByUid(long uid, Pageable pageable);
     Page<VideoFavorites> findAllByVid(long vid, Pageable pageable);
+    long countAllByVid(long vid);
     @Modifying
     @Query(value = "DELETE FROM `video_favorites` WHERE `vid`=:vid", nativeQuery = true)
     void deleteAllByVid(long vid);

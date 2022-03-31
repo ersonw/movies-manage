@@ -29,6 +29,9 @@ public interface VideoRecommendsDao extends JpaRepository<VideoRecommends, Integ
     @Query(value = "SELECT * FROM `video_recommends` where  status = 1 GROUP BY `vid`", nativeQuery = true)
 //    @Query(value = "SELECT vr.id,vr.uid,vr.vid,vr.reason,vr.status,vr.add_time,(IF(v.play > 0,v.play,(SELECT COUNT(*) FROM video_play AS vp WHERE vp.vid=v.id))) AS c FROM `video_recommends` AS vr LEFT JOIN videos v ON v.id=vr.vid ORDER BY c DESC", nativeQuery = true)
     Page<VideoRecommends> getAllByAll(Pageable pageable);
+    @Query(value = "SELECT * FROM `video_recommends` GROUP BY `vid`", nativeQuery = true)
+//    @Query(value = "SELECT vr.id,vr.uid,vr.vid,vr.reason,vr.status,vr.add_time,(IF(v.play > 0,v.play,(SELECT COUNT(*) FROM video_play AS vp WHERE vp.vid=v.id))) AS c FROM `video_recommends` AS vr LEFT JOIN videos v ON v.id=vr.vid ORDER BY c DESC", nativeQuery = true)
+    Page<VideoRecommends> getByAll(Pageable pageable);
     @Query(value = "SELECT * FROM `video_recommends` where  status = 1 and vid= :vid order by id asc LIMIT 1", nativeQuery = true)
     VideoRecommends getFirst(long vid);
     @Query(value = "SELECT vr.id,vr.uid,vr.vid,vr.reason,vr.status,vr.add_time,(SELECT COUNT(*) FROM recommend_likes AS vl WHERE vl.rid = vr.id) AS c FROM `video_recommends` AS vr WHERE vr.vid=:vid ORDER BY c DESC  LIMIT :page,:limit", nativeQuery = true)

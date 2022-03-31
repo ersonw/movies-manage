@@ -25,6 +25,7 @@ public interface VideosDao extends JpaRepository<Videos, Long>, CrudRepository<V
     long countAllByTitleLikeAndStatus(String likes, int status);
     long countAllByVodClassAndStatus(long classId, int status);
     long countAllByStatus(int status);
+    long countAllByVodClass(long vid);
     Videos findAllByShareId(String id);
     long countAllByActor(long actor);
     long countAllByUidAndStatus(long uid, int status);
@@ -60,4 +61,6 @@ public interface VideosDao extends JpaRepository<Videos, Long>, CrudRepository<V
     Page<Videos> findAllByActor(long id, Pageable pageable);
 
     Page<Videos> findAllByActorAndTitleLike(long i, String title, Pageable pageable);
+
+    Page<Videos> findAllByTitleLike(String title, Pageable pageable);
 }

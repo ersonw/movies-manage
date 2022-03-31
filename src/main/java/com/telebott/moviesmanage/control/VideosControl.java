@@ -14,6 +14,84 @@ public class VideosControl {
     @Autowired
     private VideosService videosService;
 
+    @GetMapping("/getEditorRecommendList")
+    public ResultData getEditorRecommendList(@ModelAttribute RequestData requestData){
+        ResultData data = new ResultData();
+        data.setData(videosService.getEditorRecommendList(requestData.getData()));
+        return data;
+    }
+    @GetMapping("/getEditorRecommendVideoList")
+    public ResultData getEditorRecommendVideoList(@ModelAttribute RequestData requestData){
+        ResultData data = new ResultData();
+        data.setData(videosService.getEditorRecommendVideoList(requestData.getData()));
+        return data;
+    }
+    @PostMapping("/addEditorRecommend")
+    public ResultData addEditorRecommend(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!videosService.addEditorRecommend(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("添加失败！电影必须选择且展示时间必须填写且当天影视不能重复");
+        }
+        return data;
+    }
+    @PostMapping("/updateEditorRecommend")
+    public ResultData updateEditorRecommend(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!videosService.updateEditorRecommend(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("修改失败！ID不存在");
+        }
+        return data;
+    }
+    @PostMapping("/deleteEditorRecommend")
+    public ResultData deleteEditorRecommend(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!videosService.deleteEditorRecommend(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("删除失败！ID不存在");
+        }
+        return data;
+    }
+    @PostMapping("/removeEditorRecommend")
+    public ResultData removeEditorRecommend(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!videosService.removeEditorRecommend(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("删除失败！ID不存在");
+        }
+        return data;
+    }
+    @GetMapping("/getVideoOrdersList")
+    public ResultData getVideoOrdersList(@ModelAttribute RequestData requestData){
+        ResultData data = new ResultData();
+        data.setData(videosService.getVideoOrdersList(requestData.getData()));
+        return data;
+    }
+    @PostMapping("/removeOrderUser")
+    public ResultData removeOrderUser(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!videosService.removeOrderUser(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("移除失败！订单不存在");
+        }
+        return data;
+    }
+    @PostMapping("/deleteOrderVideo")
+    public ResultData deleteOrderVideo(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!videosService.deleteOrderVideo(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("移除失败！订单不存在");
+        }
+        return data;
+    }
     @GetMapping("/getWolfFriendList")
     public ResultData getWolfFriendList(@ModelAttribute RequestData requestData){
         ResultData data = new ResultData();
@@ -32,7 +110,7 @@ public class VideosControl {
         ResultData data = new ResultData();
         if (!videosService.removeWolfUser(requestData.getData())){
             data.setCode(201);
-            data.setMessage("修改失败！演员不存在");
+            data.setMessage("移除失败！订单不存在");
         }
         return data;
     }
@@ -42,7 +120,7 @@ public class VideosControl {
         ResultData data = new ResultData();
         if (!videosService.deleteWolf(requestData.getData())){
             data.setCode(201);
-            data.setMessage("修改失败！演员不存在");
+            data.setMessage("删除失败！订单不存在");
         }
         return data;
     }

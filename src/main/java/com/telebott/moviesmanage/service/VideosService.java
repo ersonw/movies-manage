@@ -1320,7 +1320,11 @@ public class VideosService {
                 videosPage = videosDao.findAll(pageable);
             }else if (data.get("class") == null || StringUtils.isEmpty(data.getString("class"))){
                 title = "%"+data.getString("title")+"%";
-                videosPage = videosDao.findAllByTitleLikeOrUid(title,data.getLong("title"),pageable);
+                if (isNumberString(data.getString("title"))){
+                    videosPage = videosDao.findAllByTitleLikeOrUid(title,data.getLong("title"),pageable);
+                }else {
+                    videosPage = videosDao.findAllByTitleLike(title,pageable);
+                }
             }else if (data.get("title") == null || StringUtils.isEmpty(data.getString("title"))){
                 long aid = data.getLong("class");
                 VideoCategory category = videoCategoryDao.findAllById(aid);
@@ -1438,6 +1442,7 @@ public class VideosService {
                 userObject.put("nickname", user.getNickname());
             }
             jsonObject.put("user",userObject);
+            jsonObject.put("collects", videoFavoritesDao.countAllByVid(video.getId()));
             array.add(jsonObject);
         }
         object.put("total", videosPage.getTotalElements());
@@ -1501,7 +1506,13 @@ public class VideosService {
         }else {
             categoryPage = videoCategoryDao.findAll(pageable);
         }
-        object.put("list",categoryPage.getContent());
+        JSONArray array = new JSONArray();
+        for (VideoCategory category: categoryPage.getContent()) {
+            JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(category));
+            jsonObject.put("count", videosDao.countAllByVodClass(category.getId()));
+            array.add(jsonObject);
+        }
+        object.put("list",array);
         object.put("total",categoryPage.getTotalElements());
         return object;
     }
@@ -1803,6 +1814,7 @@ public class VideosService {
             actorVideos.put("id",actor.getId());
             actorVideos = getActorVideoList(actorVideos);
             jsonObject.put("videos",actorVideos);
+            jsonObject.put("collects",videoCollectsDao.countAllByAid(actor.getId()));
             array.add(jsonObject);
         }
         object.put("list",array);
@@ -1950,7 +1962,7 @@ public class VideosService {
             pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
             pageable = getPageable(data, page, limit, pageable);
         }
-        recommendsPage = videoRecommendsDao.getAllByAll(pageable);
+        recommendsPage = videoRecommendsDao.getByAll(pageable);
         JSONArray array = new JSONArray();
         for (VideoRecommends recommend : recommendsPage.getContent()) {
             JSONObject jsonObject = new JSONObject();
@@ -1990,6 +2002,259 @@ public class VideosService {
             VideoRecommends recommend = videoRecommendsDao.findAllById(data.getLong("id"));
             if (recommend != null){
                 videoRecommendsDao.deleteAllByVid(recommend.getVid());
+                return true;
+            }
+        }
+        return false;
+    }
+    //判断字符串是否为数字
+    private  static boolean isNumberString(String s){
+        for (int i=0;i< s.length(); i++){
+            if (!Character.isDigit(s.charAt(i))) return false;
+        }
+        return true;
+    }
+    public JSONObject getVideoOrdersList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        String title = null;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<VideoOrders> ordersPage;
+        JSONArray array = new JSONArray();
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            if (data.get("title") != null && StringUtils.isNotEmpty(data.getString("title")) && isNumberString(data.getString("title"))){
+                Videos video = videosDao.findAllById(data.getLong("title"));
+                if (video != null){
+                    ordersPage = videoOrdersDao.getAllByAll(video.getId(),pageable);
+                }else {
+                    ordersPage = videoOrdersDao.getAllByAll(pageable);
+                }
+            }else {
+                ordersPage = videoOrdersDao.getAllByAll(pageable);
+            }
+        }else {
+            ordersPage = videoOrdersDao.getAllByAll(pageable);
+        }
+        for (VideoOrders order : ordersPage.getContent()) {
+            Videos video = videosDao.findAllById(order.getVid());
+            if (video != null){
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("id",video.getId());
+                jsonObject.put("title",video.getTitle());
+                jsonObject.put("picThumb",video.getPicThumb());
+                JSONObject orders = new JSONObject();
+                orders.put("id",video.getId());
+                jsonObject.put("orders",getOrderList(orders));
+                array.add(jsonObject);
+            }
+        }
+        object.put("list",array);
+        object.put("total",ordersPage.getTotalElements());
+        return object;
+    }
+    public JSONObject getOrderList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        page--;
+        if (page<0) page =0;
+        JSONArray array = new JSONArray();
+        if (data != null && data.get("id") != null) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            Videos video = videosDao.findAllById(data.getLong("id"));
+            if (video != null){
+                Page<VideoOrders> ordersPage = videoOrdersDao.findAllByVid(video.getId(),pageable);
+                object.put("total",ordersPage.getTotalElements());
+                for (VideoOrders order: ordersPage.getContent()) {
+                    Users user = usersDao.findAllById(order.getUid());
+                    if (user != null) {
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put("id",order.getId());
+                        jsonObject.put("status",order.getStatus());
+                        jsonObject.put("addTime",order.getAddTime());
+                        jsonObject.put("user",user.getNickname());
+                        array.add(jsonObject);
+                    }
+                }
+            }
+        }
+        object.put("list",array);
+        return object;
+    }
+
+    public boolean removeOrderUser(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            VideoOrders orders = videoOrdersDao.findAllById(data.getLong("id"));
+            if (orders != null){
+                videoOrdersDao.delete(orders);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean deleteOrderVideo(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            Videos video = videosDao.findAllById(data.getLong("id"));
+            if (video != null){
+                videoOrdersDao.deleteAllByVid(video.getId());
+                return true;
+            }
+        }
+        return false;
+    }
+    public JSONObject getEditorRecommendVideoList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        page--;
+        if (page<0) page =0;
+        JSONArray array = new JSONArray();
+        if (data != null && data.get("date") != null) {
+            long date = 0;
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            if (StringUtils.isNotEmpty(data.getString("date")) && isNumberString(data.getString("date"))) date = TimeUtil.dayToTimeOnly(data.getString("date"));
+            if (date > 0){
+                Page<EditorRecommends> recommendsPage = editorRecommendsDao.findByDate(date,pageable);
+                for (EditorRecommends recommend: recommendsPage.getContent()) {
+                    JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(recommend));
+                    Videos video = videosDao.findAllById(recommend.getVid());
+                    if (video != null){
+                        if (StringUtils.isEmpty(recommend.getTitle())){
+                            jsonObject.put("title",video.getTitle());
+                        }
+                        jsonObject.put("picThumb",video.getPicThumb());
+                    }
+                    array.add(jsonObject);
+                }
+                object.put("total",recommendsPage.getTotalElements());
+            }
+        }
+        object.put("list",array);
+        return object;
+    }
+    public JSONObject getEditorRecommendList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        long date = 0;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<EditorRecommends> recommendsPage;
+        JSONArray array = new JSONArray();
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            if (data.get("date") != null && isNumberString(data.getString("date"))) date = TimeUtil.dayToTimeOnly(data.getString("date"));
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = getPageable(data, page, limit, pageable);
+            if (date > 0){
+                recommendsPage = editorRecommendsDao.findAllByDate(date,pageable);
+            }else {
+                recommendsPage = editorRecommendsDao.getAllByAll(pageable);
+            }
+        }else {
+            recommendsPage = editorRecommendsDao.getAllByAll(pageable);
+        }
+        for (EditorRecommends recommend : recommendsPage.getContent()) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("date", recommend.getShowTime());
+            jsonObject.put("videos", getEditorRecommendVideoList(jsonObject));
+            array.add(jsonObject);
+        }
+        object.put("list",array);
+        object.put("total",recommendsPage.getTotalElements());
+        return object;
+    }
+
+    public boolean addEditorRecommend(JSONObject data) {
+        EditorRecommends recommend = JSONObject.toJavaObject(data,EditorRecommends.class);
+        if (recommend != null && recommend.getVid() > 0 && recommend.getShowTime() > 0){
+            Videos video = videosDao.findAllById(recommend.getVid());
+            if (video != null){
+                if(video.getTitle().equals(data.getString("title"))){
+                    recommend.setTitle(null);
+                }
+                EditorRecommends editorRecommends = editorRecommendsDao.findAllByVidAndShowTime(video.getId(),recommend.getShowTime());
+                if (editorRecommends == null) {
+                    recommend.setAddTime(System.currentTimeMillis());
+                    editorRecommendsDao.saveAndFlush(recommend);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    private EditorRecommends _changeEditorRecommend(JSONObject data){
+        EditorRecommends recommend = editorRecommendsDao.findAllById(Long.parseLong(data.getString("id")));
+        if (recommend != null){
+            Videos video = videosDao.findAllById(recommend.getVid());
+            if (video != null){
+                if (data.getString("title").equals(video.getTitle())){
+                    data.put("title",null);
+                }
+                JSONObject object = JSONObject.parseObject(JSONObject.toJSONString(recommend));
+                for (Map.Entry<String, Object> entry: data.entrySet()) {
+                    if (entry.getValue() != null){
+                        object.put(entry.getKey(), entry.getValue());
+                    }
+                }
+                return JSONObject.toJavaObject(object, EditorRecommends.class);
+            }
+        }
+        return null;
+    }
+    public boolean updateEditorRecommend(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            data.put("addTime", System.currentTimeMillis());
+            EditorRecommends recommend = _changeEditorRecommend(data);
+            if (recommend != null){
+                editorRecommendsDao.saveAndFlush(recommend);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean deleteEditorRecommend(JSONObject data) {
+        if (data != null && data.get("date") != null && isNumberString(data.getString("date"))){
+            editorRecommendsDao.deleteAllByShowTime(data.getLong("date"));
+            return true;
+        }
+        return false;
+    }
+
+    public boolean removeEditorRecommend(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            EditorRecommends recommend = editorRecommendsDao.findAllById(data.getLong("id"));
+            if (recommend != null){
+                editorRecommendsDao.delete(recommend);
                 return true;
             }
         }

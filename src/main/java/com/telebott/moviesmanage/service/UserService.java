@@ -240,6 +240,7 @@ public class UserService {
             jsonObject.put("gold", getGold(user));
             jsonObject.put("diamond", getDiamond(user));
             jsonObject.put("share", getShare(user.getId()));
+            jsonObject.put("follws", userFollowsDao.countAllByUid(user.getId()));
             long balance = Long.parseLong(getBalance(user).get("balance").toString());
 //            jsonObject.put("balance", 0);
             double b = balance / 100d;

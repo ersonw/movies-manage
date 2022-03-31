@@ -18,6 +18,10 @@ public interface VideoOrdersDao extends JpaRepository<VideoOrders, Integer>, Cru
     Page<VideoOrders> findAllByUid(long uid, Pageable pageable);
     Page<VideoOrders> findAllByVid(long vid, Pageable pageable);
     @Modifying
-    @Query(value = "DELETE FROM `video_orders` WHERE `vid`=:vid", nativeQuery = true)
+    @Query(value = "DELETE FROM video_orders WHERE vid=:vid", nativeQuery = true)
     void deleteAllByVid(long vid);
+    @Query(value = "SELECT * FROM `video_orders`  GROUP BY `vid`", nativeQuery = true)
+    Page<VideoOrders> getAllByAll(Pageable pageable);
+    @Query(value = "SELECT * FROM `video_orders` where vid=:vid GROUP BY `vid`", nativeQuery = true)
+    Page<VideoOrders> getAllByAll(long vid,Pageable pageable);
 }

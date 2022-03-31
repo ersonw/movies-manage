@@ -13,6 +13,5 @@ public interface VideoCategoryDao extends JpaRepository<VideoCategory, Integer>,
     VideoCategory findAllByName(String name);
     List<VideoCategory> findAllByStatus(int status);
     Page<VideoCategory> findAllByIdOrNameLike(long id, String name, Pageable pageable);
-
     Page<VideoCategory> findAllByNameLike(String title, Pageable pageable);
 }
