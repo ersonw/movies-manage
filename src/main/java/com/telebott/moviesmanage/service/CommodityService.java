@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.telebott.moviesmanage.dao.*;
 import com.telebott.moviesmanage.entity.CommodityDiamond;
+import com.telebott.moviesmanage.entity.CommodityGold;
 import com.telebott.moviesmanage.entity.CommodityVip;
 import com.telebott.moviesmanage.entity.EditorRecommends;
 import com.telebott.moviesmanage.util.TimeUtil;
@@ -69,8 +70,7 @@ public class CommodityService {
             }
         }
         commodityVip = commodityVipDao.findAllByTitle(commodityVip.getTitle());
-        if (commodityVip != null) return false;
-        return true;
+        return commodityVip == null;
     }
     private CommodityVip  _changeData(CommodityVip commodityVip){
         JSONObject data = JSONObject.parseObject(JSONObject.toJSONString(commodityVip));
@@ -82,11 +82,15 @@ public class CommodityService {
                     object.put(entry.getKey(), entry.getValue());
                 }
             }
-            commodityVip = commodityVipDao.findAllByTitle(commodityVip.getTitle());
-            if (commodityVip == null) {
+            if(commodityVip.getTitle().equals(data.getString("title"))){
                 commodityVip = JSONObject.toJavaObject(object, CommodityVip.class);
             }else {
-                commodityVip = null;
+                commodityVip = commodityVipDao.findAllByTitle(data.getString("title"));
+                if (commodityVip == null) {
+                    commodityVip = JSONObject.toJavaObject(object, CommodityVip.class);
+                }else {
+                    commodityVip = null;
+                }
             }
         }
         return commodityVip;
@@ -162,8 +166,7 @@ public class CommodityService {
             }
         }
         commodityDiamond = commodityDiamondDao.findAllByDiamond(commodityDiamond.getDiamond());
-        if (commodityDiamond != null) return false;
-        return true;
+        return commodityDiamond == null;
     }
     private CommodityDiamond  _changeData(CommodityDiamond commodityDiamond){
         JSONObject data = JSONObject.parseObject(JSONObject.toJSONString(commodityDiamond));
@@ -175,11 +178,15 @@ public class CommodityService {
                     object.put(entry.getKey(), entry.getValue());
                 }
             }
-            commodityDiamond = commodityDiamondDao.findAllByDiamond(commodityDiamond.getDiamond());
-            if (commodityDiamond == null) {
+            if (commodityDiamond.getDiamond() == data.getLong("diamond")){
                 commodityDiamond = JSONObject.toJavaObject(object, CommodityDiamond.class);
             }else {
-                commodityDiamond = null;
+                commodityDiamond = commodityDiamondDao.findAllByDiamond(data.getLong("diamond"));
+                if (commodityDiamond == null) {
+                    commodityDiamond = JSONObject.toJavaObject(object, CommodityDiamond.class);
+                }else {
+                    commodityDiamond = null;
+                }
             }
         }
         return commodityDiamond;
@@ -209,6 +216,101 @@ public class CommodityService {
             CommodityDiamond commodityDiamond = commodityDiamondDao.findAllById(data.getLong("id"));
             if (commodityDiamond != null){
                 commodityDiamondDao.delete(commodityDiamond);
+                return true;
+            }
+        }
+        return false;
+    }
+    public JSONObject getCommodityGoldList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<CommodityGold> goldPage;
+        JSONArray array = new JSONArray();
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = VideosService.getPageable(data, page, limit, pageable);
+            if (data.get("title") != null &&
+                    StringUtils.isNotEmpty(data.getString("title")) &&
+                    VideosService.isNumberString(data.getString("title"))
+            ){
+                goldPage = commodityGoldDao.findAllById(data.getLong("title"),pageable);
+            }else {
+                goldPage = commodityGoldDao.findAll(pageable);
+            }
+        }else {
+            goldPage = commodityGoldDao.findAll(pageable);
+        }
+        object.put("list",goldPage.getContent());
+        object.put("total",goldPage.getTotalElements());
+        return object;
+    }
+    private boolean _checkData(CommodityGold commodityGold){
+        JSONObject data = JSONObject.parseObject(JSONObject.toJSONString(commodityGold));
+        for (Map.Entry<String, Object> entry: data.entrySet()) {
+            if (!entry.getKey().equals("id") && entry.getValue() == null){
+                return false;
+            }
+        }
+        commodityGold = commodityGoldDao.findAllByGold(commodityGold.getGold());
+        return commodityGold == null;
+    }
+    private CommodityGold  _changeData(CommodityGold commodityGold){
+        JSONObject data = JSONObject.parseObject(JSONObject.toJSONString(commodityGold));
+        commodityGold = commodityGoldDao.findAllById(commodityGold.getId());
+        if (commodityGold != null){
+            JSONObject object = JSONObject.parseObject(JSONObject.toJSONString(commodityGold));
+            for (Map.Entry<String, Object> entry: data.entrySet()) {
+                if (entry.getValue() != null){
+                    object.put(entry.getKey(), entry.getValue());
+                }
+            }
+            if (commodityGold.getGold() == data.getLong("gold")){
+                commodityGold = JSONObject.toJavaObject(object, CommodityGold.class);
+            }else {
+                commodityGold = commodityGoldDao.findAllByGold(data.getLong("gold"));
+                if (commodityGold == null) {
+                    commodityGold = JSONObject.toJavaObject(object, CommodityGold.class);
+                }else {
+                    commodityGold = null;
+                }
+            }
+        }
+        return commodityGold;
+    }
+    public boolean addCommodityGold(JSONObject data) {
+        data.put("ctime", System.currentTimeMillis());
+        data.put("utime", System.currentTimeMillis());
+        CommodityGold commodityGold = JSONObject.toJavaObject(data,CommodityGold.class);
+        if (_checkData(commodityGold)){
+            commodityGoldDao.saveAndFlush(commodityGold);
+            return true;
+        }
+        return false;
+    }
+    public boolean updateCommodityGold(JSONObject data) {
+        data.put("utime", System.currentTimeMillis());
+        CommodityGold commodityGold = JSONObject.toJavaObject(data,CommodityGold.class);
+        commodityGold = _changeData(commodityGold);
+        if (commodityGold != null){
+            commodityGoldDao.saveAndFlush(commodityGold);
+            return true;
+        }
+        return false;
+    }
+    public boolean deleteCommodityGold(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            CommodityGold commodityGold = commodityGoldDao.findAllById(data.getLong("id"));
+            if (commodityGold != null){
+                commodityGoldDao.delete(commodityGold);
                 return true;
             }
         }

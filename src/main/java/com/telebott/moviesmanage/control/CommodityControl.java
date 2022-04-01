@@ -85,4 +85,40 @@ public class CommodityControl {
         }
         return data;
     }
+    @GetMapping("/getCommodityGoldList")
+    public ResultData getCommodityGoldList(@ModelAttribute RequestData requestData){
+        ResultData data = new ResultData();
+        data.setData(commodityService.getCommodityGoldList(requestData.getData()));
+        return data;
+    }
+    @PostMapping("/addCommodityGold")
+    public ResultData addCommodityGold(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!commodityService.addCommodityGold(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("添加失败！所有项必填且标题不能重复");
+        }
+        return data;
+    }
+    @PostMapping("/updateCommodityGold")
+    public ResultData updateCommodityGold(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!commodityService.updateCommodityGold(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("修改失败！所有项必填且标题不能重复");
+        }
+        return data;
+    }
+    @PostMapping("/deleteCommodityGold")
+    public ResultData deleteCommodityGold(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!commodityService.deleteCommodityGold(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("删除失败！ID不存在");
+        }
+        return data;
+    }
 }
