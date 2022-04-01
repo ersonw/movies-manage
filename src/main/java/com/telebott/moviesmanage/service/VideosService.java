@@ -1413,7 +1413,7 @@ public class VideosService {
         return object;
     }
 
-    static Pageable getPageable(JSONObject data, int page, int limit, Pageable pageable) {
+    public static Pageable getPageable(JSONObject data, int page, int limit, Pageable pageable) {
         if (data.get("sort") != null){
             if (data.getString("sort").equals("+id")){
                 pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
@@ -2008,7 +2008,7 @@ public class VideosService {
         return false;
     }
     //判断字符串是否为数字
-    private  static boolean isNumberString(String s){
+    public  static boolean isNumberString(String s){
         for (int i=0;i< s.length(); i++){
             if (!Character.isDigit(s.charAt(i))) return false;
         }
