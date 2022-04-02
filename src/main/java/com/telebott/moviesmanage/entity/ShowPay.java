@@ -14,11 +14,14 @@ import javax.persistence.*;
 public class ShowPay {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private long id;
+    private String title;
     private String domain;
     private String mchId;
     private String callbackUrl;
     private String notifyUrl;
     private String errorUrl;
     private String secretKey;
+    private long ctime;
+    private long utime;
 }

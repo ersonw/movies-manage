@@ -262,9 +262,16 @@ public class OnlineOrderService {
         }
         return true;
     }
-    private void handlerOrderNotify(ShowPayOrders showPayOrders){
+    public void handlerOrderNotify(ShowPayOrders showPayOrders){
         OnlineOrder order = onlineOrderDao.findAllByOrderId(showPayOrders.getOrderNo());
-        if (order != null){
+        handlerOrderNotify(order);
+    }
+    public void handlerOrderNotifyFail(ShowPayOrders showPayOrders){
+        OnlineOrder order = onlineOrderDao.findAllByOrderId(showPayOrders.getOrderNo());
+        handlerOrderNotifyFail(order);
+    }
+    public void handlerOrderNotify(OnlineOrder order){
+        if (order != null && order.getStatus() != 1){
             OnlinePay onlinePay = onlinePayDao.findAllById(order.getPid());
             Users user = usersDao.findAllById(order.getUid());
             order.setStatus(1);
@@ -322,6 +329,38 @@ public class OnlineOrderService {
 //                            userService._saveAndPush(user);
                         }
                     }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    public void handlerOrderNotifyFail(OnlineOrder order){
+        if (order != null && order.getStatus() != 1){
+            OnlinePay onlinePay = onlinePayDao.findAllById(order.getPid());
+            Users user = usersDao.findAllById(order.getUid());
+            order.setStatus(2);
+            onlineOrderDao.saveAndFlush(order);
+            user.setUtime(System.currentTimeMillis());
+            switch (order.getType()) {
+                case PAY_ONLINE_VIP:
+                    CommodityVipOrder orders = commodityVipOrderDao.findAllByOrderId(order.getOrderNo());
+                    if (orders != null){
+                        orders.setStatus(-1);
+                        commodityVipOrderDao.saveAndFlush(orders);
+                    }
+                    break;
+                case PAY_ONLINE_GOLD:
+                    CommodityGoldOrder commodityGoldOrder = commodityGoldOrderDao.findAllByOrderId(order.getOrderNo());
+                    if (commodityGoldOrder != null){
+                        commodityGoldOrder.setStatus(-1);
+                        commodityGoldOrderDao.saveAndFlush(commodityGoldOrder);
+                    }
+                    break;
+                case PAY_ONLINE_DIAMOND:
+                    CommodityDiamondOrder commodityDiamondOrder = commodityDiamondOrderDao.findAllByOrderId(order.getOrderNo());
+                    commodityDiamondOrder.setStatus(-1);
+                    commodityDiamondOrderDao.saveAndFlush(commodityDiamondOrder);
                     break;
                 default:
                     break;

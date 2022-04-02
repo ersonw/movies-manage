@@ -8,9 +8,11 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface OnlineOrderDao extends JpaRepository<OnlineOrder, Integer>, CrudRepository<OnlineOrder, Integer> {
+public interface OnlineOrderDao extends JpaRepository<OnlineOrder, Long>, CrudRepository<OnlineOrder, Long> {
     Page<OnlineOrder> findAllByUid(long uid, Pageable pageable);
     long countAllByOrderNo(String oid);
     OnlineOrder findAllByOrderId(String oid);
     long countAllByOrderNoAndStatus(String oid, int status);
+    OnlineOrder findAllById(long id);
+    Page<OnlineOrder> findAllByOrderIdLikeOrOrderNoLike(String id, String no,Pageable pageable);
 }
