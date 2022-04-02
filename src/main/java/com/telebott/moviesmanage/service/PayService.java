@@ -34,6 +34,8 @@ public class PayService {
     private CommodityVipOrderDao commodityVipOrderDao;
     @Autowired
     private OnlineOrderService onlineOrderService;
+    @Autowired
+    private UsersDao usersDao;
 
     public JSONObject getTypeList(JSONObject data) {
         JSONObject object = new JSONObject();
@@ -317,7 +319,15 @@ public class PayService {
         }else {
             ordersPage = onlineOrderDao.findAll(pageable);
         }
-        object.put("list",ordersPage.getContent());
+        for (OnlineOrder order: ordersPage.getContent()) {
+            JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(order));
+            Users user = usersDao.findAllById(order.getUid());
+            if (user != null){
+                jsonObject.put("user", user);
+            }
+            array.add(jsonObject);
+        }
+        object.put("list",array);
         object.put("total",ordersPage.getTotalElements());
         return object;
     }
