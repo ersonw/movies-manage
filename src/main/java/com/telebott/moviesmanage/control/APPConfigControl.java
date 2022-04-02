@@ -71,5 +71,41 @@ public class APPConfigControl {
         }
         return data;
     }
+    @GetMapping("/getCarouselList")
+    public ResultData getCarouselList(@ModelAttribute RequestData requestData){
+        ResultData data = new ResultData();
+        data.setData(appConfigService.getCarouselList(requestData.getData()));
+        return data;
+    }
+    @PostMapping("/updateCarousel")
+    public ResultData updateCarousel(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!appConfigService.updateCarousel(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("修改失败！缺少必填参数配置不存在");
+        }
+        return data;
+    }
+    @PostMapping("/addCarousel")
+    public ResultData addCarousel(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!appConfigService.addCarousel(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("发布失败！缺少必填参数配置不存在");
+        }
+        return data;
+    }
+    @PostMapping("/deleteCarousel")
+    public ResultData deleteCarousel(@RequestBody RequestData requestData, @RequestAttribute String user){
+        SystemUser systemUser = JSONObject.toJavaObject(JSONObject.parseObject(user),SystemUser.class);
+        ResultData data = new ResultData();
+        if (!appConfigService.deleteCarousel(requestData.getData())){
+            data.setCode(201);
+            data.setMessage("删除失败！缺少必填参数配置不存在");
+        }
+        return data;
+    }
 
 }

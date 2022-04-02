@@ -138,7 +138,6 @@ public class PayService {
 
     boolean _checkData(ShowPay showPay){
         JSONObject data = JSONObject.parseObject(JSONObject.toJSONString(showPay));
-        System.out.println(data);
         for (Map.Entry<String, Object> entry: data.entrySet()) {
             if (!entry.getKey().equals("id") && entry.getValue() == null){
                 return false;
@@ -197,8 +196,8 @@ public class PayService {
             if (page<0) page =0;
             pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
             pageable = VideosService.getPageable(data, page, limit, pageable);
-            if (data.get("title") != null && StringUtils.isNotEmpty("%"+data.getString("title")+"%")){
-                payPage = showPayDao.findAllByTitleLike(data.getString("title"),pageable);
+            if (data.get("title") != null && StringUtils.isNotEmpty(data.getString("title"))){
+                payPage = showPayDao.findAllByTitleLike("%"+data.getString("title")+"%",pageable);
             }else {
                 payPage = showPayDao.findAll(pageable);
             }

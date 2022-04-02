@@ -2,11 +2,10 @@ package com.telebott.moviesmanage.service;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.telebott.moviesmanage.dao.CarouselDao;
 import com.telebott.moviesmanage.dao.MoblieConfigDao;
 import com.telebott.moviesmanage.dao.SystemConfigDao;
-import com.telebott.moviesmanage.entity.MoblieConfig;
-import com.telebott.moviesmanage.entity.SystemConfig;
-import com.telebott.moviesmanage.entity.Users;
+import com.telebott.moviesmanage.entity.*;
 import com.telebott.moviesmanage.util.MD5Util;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class APPConfigService {
@@ -27,6 +27,8 @@ public class APPConfigService {
     private MoblieConfigDao moblieConfigDao;
     @Autowired
     private SystemConfigDao systemConfigDao;
+    @Autowired
+    private CarouselDao carouselDao;
 
     public JSONObject getAPPConfigList(JSONObject data) {
         JSONObject object = new JSONObject();
@@ -188,6 +190,99 @@ public class APPConfigService {
             config.setAutoLogin(data.getInteger("autoLogin"));
             moblieConfigDao.saveAndFlush(config);
             return true;
+        }
+        return false;
+    }
+    boolean _checkData(Carousel carousel){
+        JSONObject data = JSONObject.parseObject(JSONObject.toJSONString(carousel));
+        for (Map.Entry<String, Object> entry: data.entrySet()) {
+            if (!entry.getKey().equals("id") && entry.getValue() == null){
+                return false;
+            }
+        }
+        carousel = carouselDao.findAllByName(carousel.getName());
+        return carousel == null;
+    }
+    private Carousel  _changeData(Carousel carousel){
+        JSONObject data = JSONObject.parseObject(JSONObject.toJSONString(carousel));
+        carousel = carouselDao.findAllById(carousel.getId());
+        if (carousel != null){
+            JSONObject object = JSONObject.parseObject(JSONObject.toJSONString(carousel));
+            for (Map.Entry<String, Object> entry: data.entrySet()) {
+                if (entry.getValue() != null){
+                    object.put(entry.getKey(), entry.getValue());
+                }
+            }
+            if(data.get("name") != null && Objects.equals(data.getString("name"), carousel.getName())){
+                carousel = JSONObject.toJavaObject(object, Carousel.class);
+            }else {
+                carousel = carouselDao.findAllByName(data.getString("name"));
+                if (carousel == null){
+                    carousel = JSONObject.toJavaObject(object, Carousel.class);
+                }else {
+                    carousel = null;
+                }
+            }
+        }
+        return carousel;
+    }
+    public JSONObject getCarouselList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<Carousel> carouselPage;
+        JSONArray array = new JSONArray();
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = VideosService.getPageable(data, page, limit, pageable);
+            if (data.get("title") != null && StringUtils.isNotEmpty(data.getString("title"))){
+                carouselPage = carouselDao.findAllByNameLike("%"+data.getString("title")+"%",pageable);
+            }else {
+                carouselPage = carouselDao.findAll(pageable);
+            }
+        }else {
+            carouselPage = carouselDao.findAll(pageable);
+        }
+        object.put("list",carouselPage.getContent());
+        object.put("total",carouselPage.getTotalElements());
+        return object;
+    }
+
+    public boolean updateCarousel(JSONObject data) {
+        data.put("addTime",System.currentTimeMillis());
+        Carousel carousel = JSONObject.toJavaObject(data,Carousel.class);
+        carousel = _changeData(carousel);
+        if (carousel != null){
+            carouselDao.saveAndFlush(carousel);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean addCarousel(JSONObject data) {
+        data.put("addTime",System.currentTimeMillis());
+        Carousel carousel = JSONObject.toJavaObject(data,Carousel.class);
+        if (_checkData(carousel)){
+            carouselDao.saveAndFlush(carousel);
+        }
+        return false;
+    }
+
+    public boolean deleteCarousel(JSONObject data) {
+        if (data != null && data.get("id") != null){
+            Carousel carousel = carouselDao.findAllById(data.getLong("id"));
+            if (carousel != null){
+                carouselDao.delete(carousel);
+                return true;
+            }
         }
         return false;
     }
