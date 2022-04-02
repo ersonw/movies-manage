@@ -12,4 +12,6 @@ public interface WithdrawalRecordsDao extends JpaRepository<WithdrawalRecords, I
     WithdrawalRecords findAllById(long id);
     Page<WithdrawalRecords> findAllByUid(long uid, Pageable pageable);
     WithdrawalRecords findAllByIdAndUid(long id, long uid);
+
+    Page<WithdrawalRecords> findAllByorderNoLike(String title, Pageable pageable);
 }

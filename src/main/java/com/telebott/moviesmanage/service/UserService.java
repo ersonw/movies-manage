@@ -229,14 +229,7 @@ public class UserService {
         object.put("total",usersPage.getTotalElements());
         JSONArray array = new JSONArray();
         for (Users user: usersPage.getContent()) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("id",user.getId());
-            jsonObject.put("nickname",user.getNickname());
-            jsonObject.put("signature",user.getSignature());
-            jsonObject.put("sex",user.getSex());
-            jsonObject.put("birthday",user.getBirthday());
-            jsonObject.put("ctime",user.getCtime());
-            jsonObject.put("utime",user.getUtime());
+            JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(user));
             jsonObject.put("gold", getGold(user));
             jsonObject.put("diamond", getDiamond(user));
             jsonObject.put("share", getShare(user.getId()));
@@ -277,15 +270,18 @@ public class UserService {
     }
 
     public boolean update(JSONObject data) {
-        Users user = JSONObject.toJavaObject(data,Users.class);
-        if (data != null && user != null){
-            Users users = usersDao.findAllById(user.getId());
-            if (users != null){
-                users = _change(user);
+        if (data != null){
+            data.put("utime",System.currentTimeMillis());
+            Users user = JSONObject.toJavaObject(data,Users.class);
+            if  (user != null){
+                Users users = usersDao.findAllById(user.getId());
                 if (users != null){
-                    usersDao.saveAndFlush(users);
-                    authDao.removeUser(users);
-                    return true;
+                    users = _change(user);
+                    if (users != null){
+                        usersDao.saveAndFlush(users);
+                        authDao.removeUser(users);
+                        return true;
+                    }
                 }
             }
         }

@@ -33,6 +33,7 @@ public class Users {
     private String avatar;
     private String uid;
     private String identifier;
+    private String reason;
     private long superior;
     private long experience;
     private long expireds;

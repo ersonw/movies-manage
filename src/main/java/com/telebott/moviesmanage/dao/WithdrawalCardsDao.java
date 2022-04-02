@@ -1,6 +1,8 @@
 package com.telebott.moviesmanage.dao;
 
 import com.telebott.moviesmanage.entity.WithdrawalCards;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -14,4 +16,6 @@ public interface WithdrawalCardsDao extends JpaRepository<WithdrawalCards, Integ
     List<WithdrawalCards> findAllByUid(long uid);
     long countAllByCode(String code);
     WithdrawalCards findAllByCode(String code);
+
+    Page<WithdrawalCards> findAllByNameLikeOrBankLikeOrCodeLike(String title, String title1, String title2, Pageable pageable);
 }
