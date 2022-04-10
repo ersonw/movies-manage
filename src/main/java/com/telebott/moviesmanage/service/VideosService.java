@@ -6,6 +6,7 @@ import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.telebott.moviesmanage.dao.*;
 import com.telebott.moviesmanage.entity.*;
 import com.telebott.moviesmanage.util.TimeUtil;
+import com.telebott.moviesmanage.util.UrlUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -171,6 +172,38 @@ public class VideosService {
         }
 //        byte[] utf8Bytes = yzmData.getTitle().getBytes(StandardCharsets.UTF_8);
 //        String str = new String(utf8Bytes, StandardCharsets.UTF_8);
+//        System.out.println(yzmData);
+        if (yzmData.getRpath().contains("/")){
+            String[] rpath = yzmData.getRpath().split("/");
+            for (int i = 0; i < rpath.length; i++) {
+                rpath[i] = UrlUtil.encode(rpath[i]);
+            }
+            yzmData.setRpath(StringUtils.join(rpath,"/"));
+        }else{
+            yzmData.setRpath(UrlUtil.encode(yzmData.getRpath()));
+        }
+//        yzmData.setRpath(yzmData.getRpath().replaceAll("\+\+",""));
+        if (yzmData.getPath().contains("/")){
+            String[] path = yzmData.getPath().split("/");
+            for (int i = 0; i < path.length; i++) {
+                path[i] = UrlUtil.encode(path[i]);
+            }
+            yzmData.setPath(StringUtils.join(path,"/"));
+        }else{
+            yzmData.setPath(UrlUtil.encode(yzmData.getPath()));
+        }
+        String pic1 = yzmData.getRpath() + "/1.jpg";
+//        if (yzmData.getOutput().getPic1().contains("/")){
+//            String[] path = yzmData.getOutput().getPic1().split("/");
+//            for (int i = 0; i < path.length; i++) {
+//                path[i] = UrlUtil.encode(path[i]);
+//            }
+//            pic1 = StringUtils.join(path,"/");
+//        }else{
+//            pic1 = UrlUtil.encode(yzmData.getOutput().getPic1());
+//        }
+
+//        yzmData.setRpath(UrlUtil.encode(yzmData.getRpath()));
         videos.setTitle(yzmData.getTitle());
         videos.setVodContent(videos.getTitle());
         videos.setStatus(1);
@@ -190,10 +223,15 @@ public class VideosService {
         if (yzmData.getMetadata() != null) {
             videos.setVodDuration(yzmData.getMetadata().getTime());
         }
+        if (!yzmData.getDomain().endsWith("/")) yzmData.setDomain(yzmData.getDomain()+"/");
         if (yzmData.getOutput() != null) {
             String picDomain = yzmData.getDomain();
             if (StringUtils.isNotEmpty(yzmData.getPicdomain())) picDomain = yzmData.getPicdomain();
-            videos.setPicThumb(picDomain + yzmData.getOutput().getPic1());
+//            assert pic1 != null;
+            if (!picDomain.endsWith("/") && !pic1.startsWith("/")) {
+                picDomain = picDomain + "/";
+            }
+            videos.setPicThumb(picDomain + pic1);
             if (StringUtils.isNotEmpty(yzmData.getOutput().getGif())) {
                 String gif = yzmData.getOutput().getGif();
                 videos.setGifThumb(yzmData.getDomain() + gif.replaceAll(yzmData.getOutdir(), ""));
