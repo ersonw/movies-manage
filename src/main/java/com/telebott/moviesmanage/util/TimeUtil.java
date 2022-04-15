@@ -112,8 +112,18 @@ public class TimeUtil {
 //        System.out.println(pattern + ": " + str);
         return str;
     }
-    public static String _getOrderNo(){
-        LocalDateTime ld = LocalDateTime.now();
+    public static String _getTime(int m){
+        LocalDateTime ld = (LocalDateTime.now()).plusMinutes(m);
         return format(ld,"yyyyMMddHHmmss");
+    }
+    public static String _getOrderNo(){
+        return _getOrderNo(0);
+    }
+    public static String _getOrderNo(int m){
+        LocalDateTime ld = (LocalDateTime.now()).plusMinutes(m);
+        return getOrderNo(ld);
+    }
+    private static String getOrderNo(LocalDateTime ld){
+        return format(ld,"yyyyMMddHHmmssSSS");
     }
 }

@@ -170,9 +170,24 @@ public class VideosService {
         } else {
             videos.setVodTimeUpdate(System.currentTimeMillis());
         }
-//        byte[] utf8Bytes = yzmData.getTitle().getBytes(StandardCharsets.UTF_8);
-//        String str = new String(utf8Bytes, StandardCharsets.UTF_8);
-//        System.out.println(yzmData);
+        if(videos.getPlay() == 0){
+            long cardinality = 0;
+            String cardinalityStr = systemConfigService.getValueByKey("cardinalityPlay");
+            if (StringUtils.isNotEmpty(cardinalityStr)){
+                cardinality = Long.parseLong(cardinalityStr);
+            }
+            cardinality = (long) (100+Math.random()*(cardinality-100+1));
+            videos.setPlay(cardinality);
+        }
+        if(videos.getRecommends() == 0){
+            long cardinality = 0;
+            String cardinalityStr = systemConfigService.getValueByKey("cardinalityRecommend");
+            if (StringUtils.isNotEmpty(cardinalityStr)){
+                cardinality = Long.parseLong(cardinalityStr);
+            }
+            cardinality = (long) (100+Math.random()*(cardinality-100+1));
+            videos.setRecommends(cardinality);
+        }
         if (yzmData.getRpath().contains("/")){
             String[] rpath = yzmData.getRpath().split("/");
             for (int i = 0; i < rpath.length; i++) {
@@ -182,7 +197,6 @@ public class VideosService {
         }else{
             yzmData.setRpath(UrlUtil.encode(yzmData.getRpath()));
         }
-//        yzmData.setRpath(yzmData.getRpath().replaceAll("\+\+",""));
         if (yzmData.getPath().contains("/")){
             String[] path = yzmData.getPath().split("/");
             for (int i = 0; i < path.length; i++) {
@@ -193,17 +207,6 @@ public class VideosService {
             yzmData.setPath(UrlUtil.encode(yzmData.getPath()));
         }
         String pic1 = yzmData.getRpath() + "/1.jpg";
-//        if (yzmData.getOutput().getPic1().contains("/")){
-//            String[] path = yzmData.getOutput().getPic1().split("/");
-//            for (int i = 0; i < path.length; i++) {
-//                path[i] = UrlUtil.encode(path[i]);
-//            }
-//            pic1 = StringUtils.join(path,"/");
-//        }else{
-//            pic1 = UrlUtil.encode(yzmData.getOutput().getPic1());
-//        }
-
-//        yzmData.setRpath(UrlUtil.encode(yzmData.getRpath()));
         videos.setTitle(yzmData.getTitle());
         videos.setVodContent(videos.getTitle());
         videos.setStatus(1);

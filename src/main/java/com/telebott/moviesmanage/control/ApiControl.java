@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.telebott.moviesmanage.dao.SystemConfigDao;
 import com.telebott.moviesmanage.entity.*;
 import com.telebott.moviesmanage.service.*;
+import com.telebott.moviesmanage.util.TimeUtil;
+import com.telebott.moviesmanage.util.WaLiUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +29,7 @@ public class ApiControl {
     @GetMapping("/test")
     public ResultData test(@ModelAttribute RequestData requestData){
         ResultData data = new ResultData();
-        data.setData(systemUserService.getPasswdTest());
+        WaLiUtil.getRecords();
         return data;
     }
     private String getJsonBodyString(HttpServletRequest httpServletRequest){
@@ -72,6 +74,7 @@ public class ApiControl {
     }
     @PostMapping("/toPayNotify")
     public String toPayNotify(@ModelAttribute ToPayNotify payNotify){
+//        System.out.println(payNotify);
         if(onlineOrderService.handlerToPayNotify(payNotify)){
             return "success";
         }

@@ -6,6 +6,7 @@ import com.telebott.moviesmanage.dao.*;
 import com.telebott.moviesmanage.entity.*;
 import com.telebott.moviesmanage.util.ShowPayUtil;
 import com.telebott.moviesmanage.util.TimeUtil;
+import com.telebott.moviesmanage.util.WaLiUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ public class OnlineOrderService {
     private static final int PAY_ONLINE_VIP = 100;
     private static final int PAY_ONLINE_GOLD = 101;
     private static final int PAY_ONLINE_DIAMOND = 102;
+    private static final int PAY_ONLINE_GAMES = 103;
     private static final int WITHDRAWAL_DIAMOND = 100;
     private static final int WITHDRAWAL_BALANCE = 101;
     private static final int WITHDRAWAL_GOLD = 102;
@@ -65,6 +67,14 @@ public class OnlineOrderService {
     private WithdrawalRecordsDao withdrawalRecordsDao;
     @Autowired
     private WithdrawalCardsDao withdrawalCardsDao;
+    @Autowired
+    private GameBalanceOrdersDao gameBalanceOrdersDao;
+    @Autowired
+    private GameCashInOrdersDao gameCashInOrdersDao;
+    @Autowired
+    private GameCashInDao gameCashInDao;
+    @Autowired
+    private ExpiredRecordsDao expiredRecordsDao;
 
     public void _save(OnlineOrder onlineOrder){
         onlineOrderDao.saveAndFlush(onlineOrder);
@@ -270,6 +280,53 @@ public class OnlineOrderService {
         OnlineOrder order = onlineOrderDao.findAllByOrderId(showPayOrders.getOrderNo());
         handlerOrderNotifyFail(order);
     }
+    private void handlerGame(GameCashIn gameCashIn, Users user){
+        long m = gameCashInOrdersDao.countAllByUidAndStatus(user.getId(),1);
+        if (m == 0){
+            switch (gameCashIn.getType()){
+                case 0:
+                    long time = (Math.max(user.getExpireds(), System.currentTimeMillis())) + ((long) gameCashIn.getVip() * 24 * 60 * 60 * 1000);
+                    user.setExpireds(time);
+                    userService._saveAndPush(user);
+                    ExpiredRecords expiredRecords = new ExpiredRecords();
+                    expiredRecords.setExpireds(time);
+                    expiredRecords.setReason("充值游戏赠送"+gameCashIn.getVip()+"天会员");
+                    expiredRecords.setUid(user.getId());
+                    expiredRecordsDao.saveAndFlush(expiredRecords);
+                    break;
+                case 1:
+                    GameBalanceOrders gameBalanceOrders = new GameBalanceOrders();
+                    gameBalanceOrders.setUid(user.getId());
+                    gameBalanceOrders.setReason("充值游戏赠送");
+                    gameBalanceOrders.setAddTime(System.currentTimeMillis());
+                    gameBalanceOrders.setUpdateTime(System.currentTimeMillis());
+                    gameBalanceOrders.setStatus(1);
+                    gameBalanceOrders.setAmount(gameCashIn.getVip());
+                    if (WaLiUtil.tranfer(user.getId(), gameBalanceOrders.getAmount())){
+                        gameBalanceOrdersDao.saveAndFlush(gameBalanceOrders);
+                    }
+                    break;
+                case 2:
+                    DiamondRecords diamondRecords = new DiamondRecords();
+                    diamondRecords.setDiamond(gameCashIn.getVip());
+                    diamondRecords.setReason("充值游戏赠送");
+                    diamondRecords.setUid(user.getId());
+                    diamondRecords.setAddTime(System.currentTimeMillis());
+                    diamondRecords.setStatus(1);
+                    diamondRecordsDao.saveAndFlush(diamondRecords);
+                    break;
+                case 3:
+                    GoldRecords goldRecords = new GoldRecords();
+                    goldRecords.setGold(gameCashIn.getVip());
+                    goldRecords.setAddTime(System.currentTimeMillis());
+                    goldRecords.setUid(user.getId());
+                    goldRecords.setStatus(1);
+                    goldRecords.setReason("充值游戏赠送");
+                    goldRecordsDao.saveAndFlush(goldRecords);
+                    break;
+            }
+        }
+    }
     public void handlerOrderNotify(OnlineOrder order){
         if (order != null && order.getStatus() != 1){
             OnlinePay onlinePay = onlinePayDao.findAllById(order.getPid());
@@ -280,15 +337,52 @@ public class OnlineOrderService {
             switch (order.getType()) {
                 case PAY_ONLINE_VIP:
                     CommodityVipOrder orders = commodityVipOrderDao.findAllByOrderId(order.getOrderNo());
+//                    System.out.println(orders);
                     if (orders != null){
                         CommodityVip commodityVip = commodityVipDao.findAllById(orders.getCid());
+//                        System.out.println(commodityVip);
                         if (commodityVip != null){
                             orders.setStatus(1);
+                            orders.setCtime(System.currentTimeMillis());
                             commodityVipOrderDao.saveAndFlush(orders);
                             long time = CommodityVipOrderService._getAddTime(commodityVip.getAddTime(), user.getExpireds());
                             user.setExpireds(time);
                             userService._saveAndPush(user);
                             onlineOrderDao.saveAndFlush(order);
+                            String reason = String.valueOf(commodityVip.getAddTime()).replaceAll("d","天").replaceAll("D","天").
+                                    replaceAll("m","月").replaceAll("M","月").
+                                    replaceAll("y","年").replaceAll("Y","年");
+                            reason = "开通" + reason + "会员";
+                            ExpiredRecords expiredRecords = new ExpiredRecords();
+                            expiredRecords.setExpireds(time);
+                            expiredRecords.setReason(reason);
+                            expiredRecords.setUid(user.getId());
+                            expiredRecords.setAddTime(System.currentTimeMillis());
+                            expiredRecordsDao.saveAndFlush(expiredRecords);
+//                            System.out.println(expiredRecords);
+//                            System.out.println(orders);
+                        }
+                    }
+                    break;
+                case PAY_ONLINE_GAMES:
+                    GameCashInOrders gameCashInOrders = gameCashInOrdersDao.findAllByOrderId(order.getOrderNo());
+                    if (gameCashInOrders != null){
+                        GameCashIn gameCashIn = gameCashInDao.findAllById(gameCashInOrders.getCid());
+                        if (gameCashIn != null){
+                            handlerGame(gameCashIn,user);
+                        }
+                        GameBalanceOrders gameBalanceOrders = new GameBalanceOrders();
+                        gameBalanceOrders.setUid(user.getId());
+                        gameBalanceOrders.setReason("在线支付充值");
+                        gameBalanceOrders.setAddTime(System.currentTimeMillis());
+                        gameBalanceOrders.setUpdateTime(System.currentTimeMillis());
+                        gameBalanceOrders.setStatus(1);
+                        gameBalanceOrders.setAmount(gameCashInOrders.getAmount());
+                        gameCashInOrders.setStatus(1);
+                        gameCashInOrders.setUpdateTime(System.currentTimeMillis());
+                        if (WaLiUtil.tranfer(user.getId(), gameCashInOrders.getAmount())){
+                            gameCashInOrdersDao.saveAndFlush(gameCashInOrders);
+                            gameBalanceOrdersDao.saveAndFlush(gameBalanceOrders);
                         }
                     }
                     break;
