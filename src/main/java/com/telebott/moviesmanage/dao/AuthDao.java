@@ -86,7 +86,7 @@ public class AuthDao {
             for (Object user: users) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 Users userEntity = objectMapper.convertValue(user, Users.class);
-                if (userEntity.getIdentifier().equals(userToken.getIdentifier()) || userEntity.getToken().equals(userToken.getToken()) || (userEntity.getId() > 0 && userToken.getId() > 0 && userEntity.getId() == userToken.getId())){
+                if (userEntity.getId() == userToken.getId()){
                     popUser(userEntity);
                 }
             }
@@ -173,7 +173,18 @@ public class AuthDao {
             }
         }
     }
-    public void removeAdminUser(Users userToken){}
+    public void removeAdminUser(SystemUser userToken){
+//        Set users = redisTemplate.opsForSet().members("AdminUser");
+//        if (users != null){
+//            for (Object user: users) {
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                SystemUser userEntity = objectMapper.convertValue(user,SystemUser.class);
+//                if (userEntity.getToken().equals(userToken.getToken())){
+//                    popAdminUser();
+//                }
+//            }
+//        }
+    }
     public void popAdminUser(SystemUser userToken){
         redisTemplate.opsForSet().remove("AdminUser" ,userToken);
     }

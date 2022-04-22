@@ -43,6 +43,9 @@ public class SystemUserService {
         }
         return data;
     }
+    public void logout(SystemUser systemUser){
+        authDao.popAdminUser(systemUser);
+    }
     public JSONObject getInfoResult(SystemUser systemUser) {
         JSONObject data = new JSONObject();
         JSONArray roles = new JSONArray();

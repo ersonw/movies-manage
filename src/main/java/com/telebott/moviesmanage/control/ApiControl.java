@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.Time;
 
 @RestController
 @RequestMapping("/api")
@@ -29,7 +30,7 @@ public class ApiControl {
     @GetMapping("/test")
     public ResultData test(@ModelAttribute RequestData requestData){
         ResultData data = new ResultData();
-        WaLiUtil.getRecords();
+        System.out.println(TimeUtil.manyDaysLater(10));
         return data;
     }
     private String getJsonBodyString(HttpServletRequest httpServletRequest){
@@ -74,7 +75,7 @@ public class ApiControl {
     }
     @PostMapping("/toPayNotify")
     public String toPayNotify(@ModelAttribute ToPayNotify payNotify){
-//        System.out.println(payNotify);
+        System.out.println(payNotify);
         if(onlineOrderService.handlerToPayNotify(payNotify)){
             return "success";
         }

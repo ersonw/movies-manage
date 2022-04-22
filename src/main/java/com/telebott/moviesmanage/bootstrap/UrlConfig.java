@@ -61,30 +61,30 @@ public class UrlConfig {
         String[] beanNamesForAnnotation = run.getBeanNamesForAnnotation(RestController.class);
         List<String> urls = new ArrayList<>();
         //获取类对象
-        for (String str : beanNamesForAnnotation) {
-            Object bean = run.getBean(str);
-            Class<?> forName = bean.getClass();
-            //获取requestmapping注解的类
-            RequestMapping declaredAnnotation = forName.getAnnotation(RequestMapping.class);
-            StringBuilder url_path = new StringBuilder();
-            if (declaredAnnotation != null) {
-                String[] value = (declaredAnnotation.value());
-                //获取类的url路径
-                url_path = new StringBuilder(value[0]);
-                for (Method method : forName.getDeclaredMethods()) {
-                    GetMapping getMapping = method.getAnnotation(GetMapping.class);
-                    PostMapping postMapping = method.getAnnotation(PostMapping.class);
-                    if (getMapping != null) {
-                        url_path.append(getMapping.value()[0]);
-                        urls.add(url_path.toString());
-                    }else if (postMapping != null){
-                        url_path.append(postMapping.value()[0]);
-                        urls.add(url_path.toString());
-                    }
-                    url_path = new StringBuilder(value[0]);
-                }
-            }
-        }
+//        for (String str : beanNamesForAnnotation) {
+//            Object bean = run.getBean(str);
+//            Class<?> forName = bean.getClass();
+//            //获取requestmapping注解的类
+//            RequestMapping declaredAnnotation = forName.getAnnotation(RequestMapping.class);
+//            StringBuilder url_path = new StringBuilder();
+//            if (declaredAnnotation != null) {
+//                String[] value = (declaredAnnotation.value());
+//                //获取类的url路径
+//                url_path = new StringBuilder(value[0]);
+//                for (Method method : forName.getDeclaredMethods()) {
+//                    GetMapping getMapping = method.getAnnotation(GetMapping.class);
+//                    PostMapping postMapping = method.getAnnotation(PostMapping.class);
+//                    if (getMapping != null) {
+//                        url_path.append(getMapping.value()[0]);
+//                        urls.add(url_path.toString());
+//                    }else if (postMapping != null){
+//                        url_path.append(postMapping.value()[0]);
+//                        urls.add(url_path.toString());
+//                    }
+//                    url_path = new StringBuilder(value[0]);
+//                }
+//            }
+//        }
         return urls;
     }
 }

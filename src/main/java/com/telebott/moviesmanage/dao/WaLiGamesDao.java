@@ -14,4 +14,5 @@ public interface WaLiGamesDao extends JpaRepository<WaLiGames, Long>, CrudReposi
     WaLiGames findAllById(long id);
     List<WaLiGames> findAllByStatus(int status);
     Page<WaLiGames> findAllByNameLike(String name, Pageable pageable);
+    WaLiGames findAllByGameId(int gameId);
 }

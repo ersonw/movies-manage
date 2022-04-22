@@ -14,6 +14,9 @@ public class wData {
     private String msg;
     private String data;
 
+    public wRecords getRecords(){
+        return JSONObject.parseObject(data,wRecords.class);
+    }
     public JSONObject getObject(){
         return JSONObject.parseObject(data);
     }

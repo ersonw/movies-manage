@@ -23,6 +23,7 @@ import javax.annotation.PostConstruct;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -57,10 +58,19 @@ public class ServerWebSocket {
      * 会话
      */
     private Session session;
+    private InetSocketAddress remoteAddress;
+    private long count = 0;
     private String token;
     private Users user;
     private final Timer timer = new Timer();
 
+    public static long getOnline(){
+        long counts = 0;
+        for (ServerWebSocket socket : webSockets) {
+            counts += socket.count;
+        }
+        return counts;
+    }
     @PostConstruct
     public void init() {
 //        System.out.println("websocket 加载");
@@ -76,7 +86,7 @@ public class ServerWebSocket {
      */
     @OnError
     public void onError(Session session, Throwable error) {
-        error.printStackTrace();
+//        error.printStackTrace();
     }
 
     /**
@@ -86,27 +96,18 @@ public class ServerWebSocket {
      */
     @OnOpen
     public void onOpen(Session session) {
+        remoteAddress = WebSocketUtil.getRemoteAddress(session);
         onlineNumber++;
         webSockets.add(this);
         this.session = session;
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                sendMessage("H");
-            }
-        }, 1000, 1000 * 10);
-        System.out.println("session:" + session.getId() + " 当前在线人数" + onlineNumber);
-    }
-
-    private void _checkReconnet() {
-        if (user == null || user.getId() == 0) return;
-        for (WebSocketChannel channel : webSocketChannels) {
-            for (int uid : channel.getUsers()) {
-                if (uid == user.getId()) {
-
-                }
-            }
-        }
+//        session.getBasicRemote().send;
+//        timer.schedule(new TimerTask() {
+//            @Override
+//            public void run() {
+//                sendMessage("H");
+//            }
+//        }, 1000, 1000 * 10);
+        System.out.println(remoteAddress.getAddress());
     }
 
     /**
@@ -117,7 +118,7 @@ public class ServerWebSocket {
         onlineNumber--;
         webSockets.remove(this);
         timer.cancel();
-        System.out.println("有连接关闭！ 当前在线人数" + onlineNumber);
+//        System.out.println("有连接关闭！ 当前在线人数" + onlineNumber);
     }
 
     /**
@@ -128,125 +129,9 @@ public class ServerWebSocket {
      */
     @OnMessage
     public void onMessage(String message, Session session) {
-//        System.out.println(message);
-        JSONObject object = JSONObject.parseObject(message);
-        if (object == null) return;
-        WebSocketData data = JSONObject.toJavaObject(object, WebSocketData.class);
-        System.out.println(data.getData());
-        handleMessages(data);
-    }
-
-    private void handleMessages(WebSocketData webSocketData) {
-        JSONObject data = JSONObject.parseObject(webSocketData.getData());
-        if (data == null) return;
-        switch (webSocketData.getCode()) {
-            case WebSocketUtil.login:
-                _handlerLogin(data);
-                break;
-            case WebSocketUtil.message_kefu_sending:
-                _handlerKeFuMessage(data);
-                break;
-            case WebSocketUtil.user_change:
-                _handlerUserChangeProfile(data);
-                break;
-            case WebSocketUtil.user_change_passwoed:
-                _handlerUserChangePassword(data);
-                break;
-            default:
-                webSocketData.setMessage("未识别消息!");
-                sendMessage(webSocketData);
-                break;
-        }
-    }
-
-    private void _handlerUserChangePassword(JSONObject data) {
-        user = self.authDao.findUserByToken(token);
-        WebSocketData msg = new  WebSocketData();
-        msg.setCode(WebSocketUtil.user_change_passwoed_fail);
-        msg.setMessage("未知错误!");
-        if (user == null){
-            msg.setMessage("用户未登陆！");
-        }else if(data.get("new") == null || Objects.equals(data.get("new").toString(), "")){
-            msg.setMessage("新密码不可为空!");
-        }else if (data.get("old") == null || Objects.equals(data.get("old").toString(), "")){
-            if (StringUtils.isNotEmpty(user.getPassword())) {
-                msg.setMessage("原密码已设置但未提交验证！");
-            }else {
-                user.setSalt(self.userService._getSalt());
-                MD5Util md5Util = new MD5Util(user.getSalt());
-                user.setPassword(md5Util.getPassWord(data.get("new").toString()));
-                self.userService._saveAndPush(user);
-                msg.setMessage("");
-                msg.setCode(WebSocketUtil.user_change_passwoed_success);
-            }
-        }else {
-            MD5Util md5Util = new MD5Util(user.getSalt());
-            String old = md5Util.getPassWord(data.get("old").toString());
-            String _new = md5Util.getPassWord(data.get("new").toString());
-            if (old.equals(_new)){
-                msg.setMessage("新旧密码相同！");
-            }else if (old.equals(user.getPassword())){
-                user.setPassword(_new);
-                self.userService._saveAndPush(user);
-                msg.setMessage("");
-                msg.setCode(WebSocketUtil.user_change_passwoed_success);
-            }else{
-                msg.setMessage("原密码不正确！");
-            }
-        }
-        sendMessage(msg);
-    }
-
-    private void _handlerUserChangeProfile(JSONObject object) {
-        WebSocketData data = new WebSocketData();
-        data.setCode(WebSocketUtil.user_change_fail);
-        data.setMessage("用户信息变更失败！");
-        Users _user = self.userService._change(object);
-        if (_user != null) {
-            System.out.println(_user);
-            data.setCode(WebSocketUtil.user_change_success);
-            data.setMessage("");
-        }
-        sendMessage(data);
-    }
-
-    private void _handlerKeFuMessage(JSONObject object) {
-        WebSocketData data = new WebSocketData();
-        KeFuMessage message = JSONObject.toJavaObject(object, KeFuMessage.class);
-        String id = message.getId();
-        if (user == null || user.getId() == 0) {
-            message = new KeFuMessage();
-            message.setId(id);
-            data.setCode(WebSocketUtil.message_kefu_send_fail);
-            data.setMessage("未绑定手机号或未注册用户部分功能受限！");
-            data.setData(JSONObject.toJSONString(message));
-            sendMessage(data);
-            return;
-        }
-        message.setUid(user.getId());
-        self.redisDao.putKeFuMessage(message);
-        message = new KeFuMessage();
-        message.setId(id);
-        data.setCode(WebSocketUtil.message_kefu_send_success);
-        data.setData(JSONObject.toJSONString(message));
-        sendMessage(data);
-    }
-
-    private void _handlerLogin(JSONObject object) {
-        WebSocketData data = new WebSocketData();
-        if (object != null && object.get("token") != null) {
-            String token = object.get("token").toString();
-            Users users = self.authDao.findUserByToken(token);
-            if (users != null) {
-                this.token = token;
-                this.user = users;
-                data.setCode(WebSocketUtil.login_success);
-                sendTo(data);
-                return;
-            }
-        }
-        data.setCode(WebSocketUtil.login_fail);
-        sendTo(data);
+        JSONObject object = (JSONObject) JSONObject.parse(message);
+        count = object.getLong("count");
+        System.out.println(count);
     }
 
     /**

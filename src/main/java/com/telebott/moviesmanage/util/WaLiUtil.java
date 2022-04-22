@@ -1,7 +1,15 @@
 package com.telebott.moviesmanage.util;
 
 import com.alibaba.fastjson.JSONObject;
+import com.telebott.moviesmanage.dao.GameRecordsDao;
+import com.telebott.moviesmanage.dao.UsersDao;
+import com.telebott.moviesmanage.dao.WaLiGamesDao;
 import com.telebott.moviesmanage.data.wData;
+import com.telebott.moviesmanage.data.wRecord;
+import com.telebott.moviesmanage.data.wRecords;
+import com.telebott.moviesmanage.entity.GameRecords;
+import com.telebott.moviesmanage.entity.Users;
+import com.telebott.moviesmanage.entity.WaLiGames;
 import com.telebott.moviesmanage.service.WaLiConfigService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
@@ -46,10 +54,18 @@ public class WaLiUtil {
     public static final String KICK = "kick";
     public static final String GET_BALANCE = "getBalance";
     public static final String GET_RECORD_V2 = "getRecordV2";
+    private static final String prefix = "23porn_";
     private static final Timer timer = new Timer();
 
     @Autowired
     private WaLiConfigService waLiConfigService;
+    @Autowired
+    private GameRecordsDao gameRecordsDao;
+    @Autowired
+    private UsersDao usersDao;
+    @Autowired
+    private WaLiGamesDao waLiGamesDao;
+
     static String apiUrl;
     static String agentId;
     static String apiUser;
@@ -62,7 +78,7 @@ public class WaLiUtil {
             public void run() {
                 getRecords();
             }
-        }, 1000 * 60 * 10);
+        }, 1000,1000 * 60 * 10);
     }
     private static Map<String, String> _getMaps(String p){
         int t = (int) (System.currentTimeMillis() / 1000);
@@ -75,14 +91,64 @@ public class WaLiUtil {
         map.put("k",sign);
         return map;
     }
-    public static void getRecords(){
-        String p = "from="+TimeUtil._getTime(-11)+"&until="+TimeUtil._getTime(-1);
+    public static void handlerRecords(wRecord record){
+         List<String> uids = record.getUid();
+         List<Integer> games = record.getGame();
+         List<String> profits = record.getProfit();
+         List<String> balances = record.getBalance();
+         List<String> validBets = record.getValidBet();
+         List<String> taxs = record.getTax();
+         List<String> recordTimes = record.getRecordTime();
+         List<String> recordIds = record.getRecordId();
+         List<String> detailUrls = record.getDetailUrl();
+         List<GameRecords> recordsList = new ArrayList<>();
+        for (int i=0; i< uids.size(); i++) {
+            if (i < games.size() && i < profits.size() &&
+                    i < balances.size() && i < validBets.size() &&
+                    i < recordTimes.size() && i < taxs.size() &&
+                    i < recordIds.size()){
+                GameRecords records = self.gameRecordsDao.findAllByRecordId(recordIds.get(i));
+                WaLiGames waLiGames = self.waLiGamesDao.findAllByGameId(games.get(i));
+                Users user = self.usersDao.findAllById(Long.parseLong(uids.get(i).replaceAll(prefix,"")));
+                if (user != null && records == null && waLiGames != null){
+                    records = new GameRecords();
+                    records.setUid(user.getId());
+                    records.setGame(waLiGames.getId());
+                    records.setProfit(new Double(Double.parseDouble(profits.get(i)) * 100).longValue());
+                    records.setBalance(new Double(Double.parseDouble(balances.get(i)) * 100).longValue());
+                    records.setValid_bet(new Double(Double.parseDouble(validBets.get(i)) * 100).longValue());
+                    records.setTax(new Double(Double.parseDouble(taxs.get(i)) * 100).longValue());
+                    records.setRecordTime(TimeUtil.strToTime(recordTimes.get(i)));
+                    records.setRecordId(recordIds.get(i));
+                    if (detailUrls != null && i < detailUrls.size()){
+                        records.setDetailUrl(detailUrls.get(i));
+                    }
+                    recordsList.add(records);
+                }
+            }
+        }
+        self.gameRecordsDao.saveAllAndFlush(recordsList);
+    }
+    private static void getRecords(String from, String until){
+        String p = "from="+from+"&until="+until+"&detail=2";
         Map<String, String> map = _getMaps(p);
         String result = sendGet(apiUrl+"/"+GET_RECORD_V2,map);
-        System.out.println(result);
+        wData data = JSONObject.toJavaObject(JSONObject.parseObject(result),wData.class);
+        if (data != null) {
+//            System.out.println(result);
+            if (data.getRecords() != null && data.getRecords().getCount() > 0){
+                handlerRecords(data.getRecords().getList());
+                if (data.getRecords().isHasMore()){
+                    getRecords(from,until);
+                }
+            }
+        }
+    }
+    public static void getRecords(){
+        getRecords(TimeUtil._getTime(-35),TimeUtil._getTime(-2));
     }
     public static boolean tranfer(long id, long balance) {
-        String p = "uid=23porn_"+id+"&credit="+(balance / 100d)+"&orderId="+agentId+"_"+TimeUtil._getOrderNo()+"_23porn_"+ id;
+        String p = "uid="+prefix+id+"&credit="+(balance / 100d)+"&orderId="+agentId+"_"+TimeUtil._getOrderNo()+"_"+prefix+ id;
         Map<String, String> map = _getMaps(p);
         String result = sendGet(apiUrl+"/"+TRANSFER_V2,map);
 //        System.out.println(result);
@@ -93,7 +159,7 @@ public class WaLiUtil {
                     if (data.getObject().getInteger("status") == 1){
                         return true;
                     }else{
-                        System.out.println("UID:"+id+" 划转失败! 金额"+ (balance / 100d));
+                        System.out.println("UID:"+id+" 上分失败! 金额"+ (balance / 100d));
                     }
                 }else{
                     handlerError(data.getMsg());
@@ -247,7 +313,7 @@ public class WaLiUtil {
         Map<String, String> map = new HashMap<>();
         map.put("a",apiUser);
         map.put("t", String.valueOf(t));
-        String p = "uid=23porn_"+uid;
+        String p = "uid="+prefix+uid;
         p = encrypt(encryptKey,p);
         String k = getSign(signKey,p,t);
         map.put("p",p);
@@ -274,7 +340,7 @@ public class WaLiUtil {
         Map<String, String> map = new HashMap<>();
         map.put("a",apiUser);
         map.put("t", String.valueOf(t));
-        String p = "uid=23porn_"+uid;
+        String p = "uid="+prefix+uid;
         p = encrypt(encryptKey,p);
         String k = getSign(signKey,p,t);
         map.put("p",p);
@@ -301,7 +367,7 @@ public class WaLiUtil {
         Map<String, String> map = new HashMap<>();
         map.put("a",apiUser);
         map.put("t", String.valueOf(t));
-        String p = "uid=23porn_"+uid+"&game="+gid;
+        String p = "uid="+prefix+uid+"&game="+gid;
         p = encrypt(encryptKey,p);
         String k = getSign(signKey,p,t);
         map.put("p",p);

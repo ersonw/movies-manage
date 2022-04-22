@@ -9,20 +9,20 @@ import javax.persistence.*;
 @Setter
 @Getter
 @Entity
-@Table(name = "online_pay")
+@Table(name = "game_records")
 @Cacheable
 @ToString(includeFieldNames = true)
-public class OnlinePay {
+public class GameRecords {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    private String title;
-    private String iconImage;
-    private int status;
-    private int game;
-    private long mini;
-    private long max;
-    private long ctime;
-    private long utime;
-    private long type;
+    private long uid;
+    private long game;
+    private long profit;
+    private long balance;
+    private long valid_bet;
+    private long tax;
+    private long recordTime;
+    private String recordId;
+    private String detailUrl;
 }
