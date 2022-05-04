@@ -8,6 +8,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
+
 public class ResultData {
     private int code = 200;
     private JSONObject data = new JSONObject();

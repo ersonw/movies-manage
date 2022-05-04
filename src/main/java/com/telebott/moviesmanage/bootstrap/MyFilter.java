@@ -44,26 +44,24 @@ public class MyFilter implements Filter {
                 //获取request的body参数
                 String postContent = getBody(request);
                 //如果body中存在数据放入HttpServletRequest
-                if (StringUtils.isNotEmpty(postContent)) {
+                JSONObject jsStr = null;
+                if (StringUtils.isNotEmpty(postContent) && postContent.startsWith("{") && postContent.endsWith("}")) {
                     //修改、新增、删除参数
-                    JSONObject jsStr = JSONObject.parseObject(postContent);
-                    String token = ((HttpServletRequest) req).getHeader("Token");
-//                    System.out.println(token);
-                    if (StringUtils.isNotEmpty(token)){
-                        SystemUser user = authDao.findAdminUserByToken(token);
-                        if (user != null){
-                            jsStr.put("user", JSONObject.toJSONString(user));
-                        }
-                    }
-//                    if(jsStr.containsKey("userName")){
-//                        jsStr.put("userName", "对用户名进行解密");
-//                    }
-                    postContent = jsStr.toJSONString();
-                    //将参数放入重写的方法中
-                    request = new BodyRequestWrapper(request, postContent);
+                    jsStr = JSONObject.parseObject(postContent);
+                }else {
+                    jsStr = new JSONObject();
                 }
+                String token = ((HttpServletRequest) req).getHeader("Token");
+                if (StringUtils.isNotEmpty(token)){
+                    SystemUser user = authDao.findAdminUserByToken(token);
+                    if (user != null){
+                        jsStr.put("user", JSONObject.toJSONString(user));
+                    }
+                }
+                postContent = jsStr.toJSONString();
+                //将参数放入重写的方法中
+                request = new BodyRequestWrapper(request, postContent);
             }
-            //form表单形式
             if (contentType != null && (contentType.equals(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                     || contentType.contains(MediaType.MULTIPART_FORM_DATA_VALUE))
                     && !request.getParameterMap().isEmpty()) {
@@ -80,20 +78,12 @@ public class MyFilter implements Filter {
                 }
                 request = new ParameterRequestWrapper(request, parameterMap);
             }
-            if (request.getMethod().equals("GET") /*&& !request.getParameterMap().isEmpty()*/){
-//                //对请求参数进行处理
+            if (request.getMethod().equals("GET")){
                 String token = ((HttpServletRequest) req).getHeader("Token");
                 if (StringUtils.isNotEmpty(token)){
                     SystemUser user = authDao.findAdminUserByToken(token);
                     if (user != null){
                         Map<String, String[]> parameterMap =new HashMap(request.getParameterMap());
-//                        parameterMap.put("user", new String[]{JSON.toJSONString(user)});
-//                        parameterMap.put("user", new String[]{user.toString()});
-//                        request = new ParameterRequestWrapper(request, parameterMap);
-//                        Map<String, Object> map = new HashMap<>();
-//                        map.put("user", user);
-//                        RequestParameterWrapper wrapper = new RequestParameterWrapper(request);
-//                        wrapper.addParameters(map);
                         ParameterRequestWrapper wrapper = new ParameterRequestWrapper(request,parameterMap);
                         wrapper.addParameter("user", JSONObject.toJSONString(user));
                         request = wrapper;

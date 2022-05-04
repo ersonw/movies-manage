@@ -19,6 +19,11 @@ public class AssertConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/**").addResourceLocations("classpath:/static/").addResourceLocations( "classpath:/META-INF/resources/static/");
+        //从这里开始，是我加的swagger的静态资源
+        registry.addResourceHandler("swagger-ui.html")
+                .addResourceLocations("classpath:/META-INF/resources/");
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/");
     }
 
     @Override
@@ -42,6 +47,7 @@ public class AssertConfig implements WebMvcConfigurer {
         exclude.add("/api/*");
         AuthInterceptor authInterceptor = new AuthInterceptor(authDao);
         registry.addInterceptor(authInterceptor).addPathPatterns("/**")
-                .excludePathPatterns(exclude);
+                .excludePathPatterns(exclude)
+                .excludePathPatterns("/swagger-resources/**", "/webjars/**", "/v2/**", "/swagger-ui.html/**");
     }
 }
