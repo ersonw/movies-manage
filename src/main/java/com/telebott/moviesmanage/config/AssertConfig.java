@@ -1,6 +1,8 @@
 package com.telebott.moviesmanage.config;
 
 import com.telebott.moviesmanage.dao.AuthDao;
+import com.telebott.moviesmanage.dao.SystemUserDao;
+import com.telebott.moviesmanage.dao.UsersDao;
 import com.telebott.moviesmanage.service.AuthInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +18,8 @@ import java.util.List;
 public class AssertConfig implements WebMvcConfigurer {
     @Autowired
     private AuthDao authDao;
+    @Autowired
+    private SystemUserDao systemUserDao;
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/**").addResourceLocations("classpath:/static/").addResourceLocations( "classpath:/META-INF/resources/static/");
@@ -45,7 +49,7 @@ public class AssertConfig implements WebMvcConfigurer {
         exclude.add("/img/**");
         exclude.add("/*");
         exclude.add("/api/*");
-        AuthInterceptor authInterceptor = new AuthInterceptor(authDao);
+        AuthInterceptor authInterceptor = new AuthInterceptor(authDao, systemUserDao);
         registry.addInterceptor(authInterceptor).addPathPatterns("/**")
                 .excludePathPatterns(exclude)
                 .excludePathPatterns("/swagger-resources/**", "/webjars/**", "/v2/**", "/swagger-ui.html/**");

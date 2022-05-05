@@ -69,12 +69,14 @@ public class DashboardService {
 
     public JSONObject withdrawal() {
         JSONObject object = new JSONObject();
+        Long sq = withdrawalRecordsDao.countAllBySQ();
         Long t = withdrawalRecordsDao.countAllByTime(TimeUtil.getTodayZero());
         Long y = withdrawalRecordsDao.countAllByTime(TimeUtil.getBeforeDaysZero(1),TimeUtil.getTodayZero());
         Long all = withdrawalRecordsDao.countAllByTime();
         object.put("all", all == null ? 0: all);
-        object.put("t", t == null ? 0 : t);
+        object.put("sq", sq == null ? 0 : sq);
         object.put("y", y == null ? 0 : y);
+        object.put("t", t == null ? 0 : t);
         return object;
     }
 
@@ -107,7 +109,7 @@ public class DashboardService {
         Long l = authDao.countAllUser();
         object.put("v", v);
         object.put("o", o);
-        object.put("y", l);
+        object.put("l", l);
         return object;
     }
 }

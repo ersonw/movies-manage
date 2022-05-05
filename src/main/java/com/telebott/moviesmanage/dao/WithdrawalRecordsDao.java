@@ -15,6 +15,8 @@ public interface WithdrawalRecordsDao extends JpaRepository<WithdrawalRecords, I
     WithdrawalRecords findAllByIdAndUid(long id, long uid);
 
     Page<WithdrawalRecords> findAllByorderNoLike(String title, Pageable pageable);
+    @Query(value = "SELECT COUNT(*) FROM withdrawal_records WHERE status=0", nativeQuery = true)
+    Long countAllBySQ();
     @Query(value = "SELECT SUM(amount) FROM withdrawal_records WHERE status=1", nativeQuery = true)
     Long countAllByTime();
     @Query(value = "SELECT SUM(amount) FROM withdrawal_records WHERE add_time > :time  AND status=1", nativeQuery = true)

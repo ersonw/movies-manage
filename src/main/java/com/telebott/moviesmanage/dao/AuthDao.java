@@ -125,6 +125,10 @@ public class AuthDao {
     //获取RedisTemplate 中key 的总数
     public long countAllUser(){
         long count = 0;
+        Set users = redisTemplate.opsForSet().members("Users");
+        for (Object o : users) {
+            count++;
+        }
         return count;
     }
     public Users findUserByIdentifier(String id) {
