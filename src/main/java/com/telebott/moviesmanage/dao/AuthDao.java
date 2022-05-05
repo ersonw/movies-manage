@@ -122,6 +122,11 @@ public class AuthDao {
     public void popUser(Users userToken){
         redisTemplate.opsForSet().remove("Users" ,userToken);
     }
+    //获取RedisTemplate 中key 的总数
+    public long countAllUser(){
+        long count = 0;
+        return count;
+    }
     public Users findUserByIdentifier(String id) {
         Set users = redisTemplate.opsForSet().members("Users");
         if (users != null){

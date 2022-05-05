@@ -25,4 +25,10 @@ public interface UsersDao extends JpaRepository<Users, Integer>, CrudRepository<
     Page<Users> findAllByNicknamelike(String title,int status , Pageable pageable);
     Page<Users> findAllByNicknameLikeOrPhoneLikeOrUidLike(String nickname, String phone,String uid, Pageable pageable);
     Page<Users> findAllByStatus(int status, Pageable pageable);
+    @Query(value = "SELECT COUNT(*) FROM users", nativeQuery = true)
+    Long countAllByTime();
+    @Query(value = "SELECT COUNT(*) FROM users WHERE ctime > :time  AND status=1", nativeQuery = true)
+    Long countAllByTime(long time);
+    @Query(value = "SELECT COUNT(*) FROM users WHERE ctime > :t1 and ctime < :t2 AND status=1", nativeQuery = true)
+    Long countAllByTime(long t1, long t2);
 }
