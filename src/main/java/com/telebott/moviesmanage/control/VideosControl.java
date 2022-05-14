@@ -267,10 +267,10 @@ public class VideosControl {
         return data;
     }
     @ApiOperation(value = "获取归属女优视频", notes = "女优")
-    @GetMapping("/getActorVideos")
-    public ResultData getActorVideos(@ModelAttribute RequestData requestData) {
+    @GetMapping("/getActorVideos/{id}/{page}")
+    public ResultData getActorVideos(@PathVariable("id") long id,@PathVariable(value = "page", required = false) int page) {
         ResultData data = new ResultData();
-        data.setData(videosService.getActorVideos(requestData.getData()));
+        data.setData(videosService.getActorVideos(page, id));
         return data;
     }
     @ApiOperation(value = "获取所有女优", notes = "女优")

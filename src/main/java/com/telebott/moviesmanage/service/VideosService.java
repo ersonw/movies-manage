@@ -344,23 +344,15 @@ public class VideosService {
         return object;
     }
 
-    public JSONObject getActorVideos(JSONObject data) {
+    public JSONObject getActorVideos(int page, long id) {
         JSONObject object = new JSONObject();
-        int page = 1;
         int limit = 20;
-        String title = null;
         page--;
         if (page<0) page =0;
         JSONArray array = new JSONArray();
-        if (data != null && data.get("id") != null) {
-            if (data.get("page") != null){
-                page = Integer.parseInt(data.get("page").toString());
-            }
-            page--;
-            if (page<0) page =0;
-            Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
-            pageable = getPageable(data, page, limit, pageable);
-            VideoActors actor = videoActorsDao.findAllById(data.getLong("id"));
+        if (id > 0) {
+            Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "id"));
+            VideoActors actor = videoActorsDao.findAllById(id);
             if (actor != null){
                 Page<Videos> videosPage = videosDao.findAllByActor(actor.getId(), pageable);
                 getVideoPage(object, array, videosPage);
