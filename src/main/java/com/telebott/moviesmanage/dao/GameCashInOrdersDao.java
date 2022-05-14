@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface GameCashInOrdersDao  extends JpaRepository<GameCashInOrders, Long>, CrudRepository<GameCashInOrders, Long> {
     GameCashInOrders findAllById(long id);
+//    GameCashInOrders findAllByOrderId(String orderId);
     Page<GameCashInOrders> findAllByUid(long uid, Pageable pageable);
     GameCashInOrders findAllByOrderId(String orderId);
     long countAllByUid(long uid);
@@ -21,4 +22,6 @@ public interface GameCashInOrdersDao  extends JpaRepository<GameCashInOrders, Lo
     Long countAllByTime(long time);
     @Query(value = "SELECT SUM(amount) FROM game_cash_in_orders WHERE add_time > :t1 and add_time < :t2 AND status=1", nativeQuery = true)
     Long countAllByTime(long t1, long t2);
+
+    Page<GameCashInOrders> findAllByOrderIdLike(String title, Pageable pageable);
 }

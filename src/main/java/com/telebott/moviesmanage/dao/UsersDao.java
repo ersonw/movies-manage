@@ -23,6 +23,10 @@ public interface UsersDao extends JpaRepository<Users, Integer>, CrudRepository<
     List<Users> findAllBySuperior(long uid);
     @Query(value = "select * from users where status =:status and (nickname like %:title% or phone like %:title% or uid like %:title% ) ", nativeQuery = true)
     Page<Users> findAllByNicknamelike(String title,int status , Pageable pageable);
+    @Query(value = "select * from users where expireds > :time and (nickname like %:title% or phone like %:title% or uid like %:title% ) ", nativeQuery = true)
+    Page<Users> findAll(String title,long time , Pageable pageable);
+    @Query(value = "select * from users where expireds > :time ", nativeQuery = true)
+    Page<Users> findAll(long time , Pageable pageable);
     Page<Users> findAllByNicknameLikeOrPhoneLikeOrUidLike(String nickname, String phone,String uid, Pageable pageable);
     Page<Users> findAllByStatus(int status, Pageable pageable);
     @Query(value = "SELECT COUNT(*) FROM users", nativeQuery = true)

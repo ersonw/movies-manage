@@ -444,6 +444,13 @@ public class OnlineOrderService {
                         commodityVipOrderDao.saveAndFlush(orders);
                     }
                     break;
+                case PAY_ONLINE_GAMES:
+                    GameCashInOrders gameCashInOrders = gameCashInOrdersDao.findAllByOrderId(order.getOrderNo());
+                    if (gameCashInOrders != null){
+                        gameCashInOrders.setStatus(-1);
+                        gameCashInOrdersDao.saveAndFlush(gameCashInOrders);
+                    }
+                    break;
                 case PAY_ONLINE_GOLD:
                     CommodityGoldOrder commodityGoldOrder = commodityGoldOrderDao.findAllByOrderId(order.getOrderNo());
                     if (commodityGoldOrder != null){

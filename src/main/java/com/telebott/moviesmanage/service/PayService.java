@@ -35,6 +35,8 @@ public class PayService {
     @Autowired
     private OnlineOrderService onlineOrderService;
     @Autowired
+    private GameCashInOrdersDao gameCashInOrdersDao;
+    @Autowired
     private UsersDao usersDao;
 
     public JSONObject getTypeList(JSONObject data) {
@@ -78,13 +80,10 @@ public class PayService {
     }
     public JSONObject getOnlinePayList(JSONObject data) {
         JSONObject object = new JSONObject();
-        int page = 1;
+        int page = 0;
         int limit = 20;
-        page--;
-        if (page<0) page =0;
         Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
         Page<OnlinePay> payPage;
-        JSONArray array = new JSONArray();
         if (data != null ) {
             if (data.get("page") != null){
                 page = Integer.parseInt(data.get("page").toString());
@@ -269,9 +268,9 @@ public class PayService {
         object.put("total",ordersPage.getTotalElements());
         return object;
     }
-    public boolean ShowPayOrderSuccess(JSONObject data) {
-        if (data != null && data.getString("id") != null){
-            ShowPayOrders order = showPayOrdersDao.findAllById(data.getLong("id"));
+    public boolean ShowPayOrderSuccess(long id) {
+        if (id > 0){
+            ShowPayOrders order = showPayOrdersDao.findAllById(id);
             if (order != null && order.getStatus() == 0){
                 order.setStatus(1);
                 showPayOrdersDao.saveAndFlush(order);
@@ -281,9 +280,9 @@ public class PayService {
         }
         return false;
     }
-    public boolean ShowPayOrderFail(JSONObject data) {
-        if (data != null && data.getString("id") != null){
-            ShowPayOrders order = showPayOrdersDao.findAllById(data.getLong("id"));
+    public boolean ShowPayOrderFail(long id) {
+        if (id > 0){
+            ShowPayOrders order = showPayOrdersDao.findAllById(id);
             if (order != null && order.getStatus() == 0){
                 order.setStatus(2);
                 showPayOrdersDao.saveAndFlush(order);
@@ -331,9 +330,9 @@ public class PayService {
         object.put("total",ordersPage.getTotalElements());
         return object;
     }
-    public boolean OnlinePayOrderSuccess(JSONObject data) {
-        if (data != null && data.getString("id") != null){
-            OnlineOrder order = onlineOrderDao.findAllById(data.getLong("id"));
+    public boolean OnlinePayOrderSuccess(long id) {
+        if (id > 0){
+            OnlineOrder order = onlineOrderDao.findAllById(id);
             if (order != null && order.getStatus() == 0){
                 order.setStatus(1);
                 onlineOrderDao.saveAndFlush(order);
@@ -343,9 +342,9 @@ public class PayService {
         }
         return false;
     }
-    public boolean OnlinePayOrderFail(JSONObject data) {
-        if (data != null && data.getString("id") != null){
-            OnlineOrder order = onlineOrderDao.findAllById(data.getLong("id"));
+    public boolean OnlinePayOrderFail(long id) {
+        if (id > 0){
+            OnlineOrder order = onlineOrderDao.findAllById(id);
             if (order != null && order.getStatus() == 0){
                 order.setStatus(2);
                 onlineOrderDao.saveAndFlush(order);
@@ -361,5 +360,66 @@ public class PayService {
         List<OnlinePay> pays = onlinePayDao.findAll();
         object.put("list",pays);
         return object;
+    }
+
+    public JSONObject getGameOrderList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 0;
+        int limit = 20;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<GameCashInOrders> ordersPage;
+        JSONArray array = new JSONArray();
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = VideosService.getPageable(data, page, limit, pageable);
+            if (data.get("title") != null && StringUtils.isNotEmpty(data.getString("title"))){
+                ordersPage = gameCashInOrdersDao.findAllByOrderIdLike("%"+data.getString("title")+"%",pageable);
+            }else {
+                ordersPage = gameCashInOrdersDao.findAll(pageable);
+            }
+        }else {
+            ordersPage = gameCashInOrdersDao.findAll(pageable);
+        }
+        for (GameCashInOrders orders: ordersPage.getContent()) {
+            JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(orders));
+            Users user = usersDao.findAllById(orders.getUid());
+            if (user != null){
+                jsonObject.put("user", user);
+            }
+            array.add(jsonObject);
+        }
+        object.put("list",array);
+        object.put("total",ordersPage.getTotalElements());
+        return object;
+    }
+
+    public boolean GameOrderSuccess(long id) {
+        GameCashInOrders orders = gameCashInOrdersDao.findAllById(id);
+        if (orders != null && orders.getStatus() == 0){
+            OnlineOrder order = onlineOrderDao.findAllByOrderNo(orders.getOrderId());
+            if (order != null && order.getStatus() == 0){
+                order.setStatus(1);
+                onlineOrderService.handlerOrderNotify(order);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean GameOrderFail(long id) {
+        GameCashInOrders orders = gameCashInOrdersDao.findAllById(id);
+        if (orders != null && orders.getStatus() == 0){
+            OnlineOrder order = onlineOrderDao.findAllByOrderNo(orders.getOrderId());
+            if (order != null && order.getStatus() == 0){
+                onlineOrderService.handlerOrderNotifyFail(order);
+                return true;
+            }
+        }
+        return false;
     }
 }

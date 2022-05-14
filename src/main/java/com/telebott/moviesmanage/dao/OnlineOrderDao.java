@@ -15,4 +15,6 @@ public interface OnlineOrderDao extends JpaRepository<OnlineOrder, Long>, CrudRe
     long countAllByOrderNoAndStatus(String oid, int status);
     OnlineOrder findAllById(long id);
     Page<OnlineOrder> findAllByOrderIdLikeOrOrderNoLike(String id, String no,Pageable pageable);
+
+    OnlineOrder findAllByOrderNo(String orderId);
 }

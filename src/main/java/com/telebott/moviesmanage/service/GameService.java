@@ -1,12 +1,9 @@
 package com.telebott.moviesmanage.service;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.telebott.moviesmanage.dao.GameRecordsDao;
-import com.telebott.moviesmanage.dao.WaLiConfigDao;
-import com.telebott.moviesmanage.dao.WaLiGamesDao;
-import com.telebott.moviesmanage.dao.WaliGameRecordsDao;
-import com.telebott.moviesmanage.entity.ShowPay;
-import com.telebott.moviesmanage.entity.WaLiGames;
+import com.telebott.moviesmanage.dao.*;
+import com.telebott.moviesmanage.entity.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,6 +24,8 @@ public class GameService {
     @Autowired
     private WaliGameRecordsDao waliGameRecordsDao;
     @Autowired
+    private UsersDao usersDao;
+    @Autowired
     private GameRecordsDao gameRecordsDao;
     @Autowired
     private WaLiConfigService waLiConfigService;
@@ -41,14 +40,16 @@ public class GameService {
         JSONObject object = new JSONObject();
         int page = 0;
         int limit = 20;
-        if (data.get("page") != null && isNumberString(data.getString("page"))) page = data.getIntValue("page");
-        if (data.get("limit") != null && isNumberString(data.getString("limit"))) limit = data.getIntValue("limit");
-        page--;
-        if (page < 0) page =0;
-        if (limit < 0) limit =20;
+        if (data != null){
+            if (data.get("page") != null && isNumberString(data.getString("page"))) page = data.getIntValue("page");
+            if (data.get("limit") != null && isNumberString(data.getString("limit"))) limit = data.getIntValue("limit");
+            page--;
+            if (page < 0) page =0;
+            if (limit < 0) limit =20;
+        }
         Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
         Page<WaLiGames> waLiGamesPage;
-        if (data.get("title") != null && StringUtils.isNotEmpty(data.getString("title"))){
+        if (data != null && data.get("title") != null && StringUtils.isNotEmpty(data.getString("title"))){
             waLiGamesPage = waLiGamesDao.findAllByNameLike(data.getString("title"), pageable);
         }else {
             waLiGamesPage = waLiGamesDao.findAll(pageable);
@@ -98,7 +99,16 @@ public class GameService {
         }
         return false;
     }
-
+    public boolean delete(long id) {
+        if (id > 0){
+            WaLiGames games = waLiGamesDao.findAllById(id);
+            if (games != null){
+                waLiGamesDao.delete(games);
+                return true;
+            }
+        }
+        return false;
+    }
     public JSONObject configList(JSONObject data) {
         JSONObject object = new JSONObject();
         object.put("apiUrl",waLiConfigService.getValueByName("apiUrl"));
@@ -106,6 +116,53 @@ public class GameService {
         object.put("apiUser",waLiConfigService.getValueByName("apiUser"));
         object.put("encryptKey",waLiConfigService.getValueByName("encryptKey"));
         object.put("signKey",waLiConfigService.getValueByName("signKey"));
+        return object;
+    }
+
+    public boolean updateConfig(JSONObject data) {
+        for (Map.Entry<String, Object> entry: data.entrySet()) {
+            if (entry.getValue() != null){
+                WaLiConfig config = waLiConfigDao.findAllByName(entry.getValue().toString());
+                if (config == null) {
+                    config = new WaLiConfig();
+                    config.setAddTime(System.currentTimeMillis());
+                    config.setName(entry.getKey());
+                }
+                config.setUpdateTime(System.currentTimeMillis());
+                config.setVal(entry.getValue().toString());
+                waLiConfigDao.saveAndFlush(config);
+            }
+        }
+        return true;
+    }
+
+
+    public JSONObject getRecordList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 0;
+        int limit = 20;
+        if (data != null){
+            if (data.get("page") != null && isNumberString(data.getString("page"))) page = data.getIntValue("page");
+            if (data.get("limit") != null && isNumberString(data.getString("limit"))) limit = data.getIntValue("limit");
+            page--;
+            if (page < 0) page =0;
+            if (limit < 0) limit =20;
+        }
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<GameRecords> gameRecordsPage;
+        if (data != null &&  data.get("title") != null && StringUtils.isNotEmpty(data.getString("title")) && isNumberString(data.getString("title"))){
+            gameRecordsPage = gameRecordsDao.findAllByUid(data.getLong("title"), pageable);
+        }else {
+            gameRecordsPage = gameRecordsDao.findAll(pageable);
+        }
+        JSONArray array = new JSONArray();
+        for (GameRecords records : gameRecordsPage.getContent()) {
+            JSONObject json = JSONObject.parseObject(JSONObject.toJSONString(records));
+            json.put("user", usersDao.findAllById(records.getUid()));
+            array.add(json);
+        }
+        object.put("list",array);
+        object.put("total",gameRecordsPage.getTotalElements());
         return object;
     }
 }

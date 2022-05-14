@@ -6,6 +6,7 @@ import com.telebott.moviesmanage.dao.*;
 import com.telebott.moviesmanage.entity.MoblieConfig;
 import com.telebott.moviesmanage.entity.SmsRecords;
 import com.telebott.moviesmanage.entity.Users;
+import com.telebott.moviesmanage.util.TimeUtil;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +15,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 
+@Transactional
 @Service
 public class UserService {
     @Autowired
@@ -27,17 +30,9 @@ public class UserService {
     @Autowired
     private AuthDao authDao;
     @Autowired
-    private VideoRecommendsDao videoRecommendsDao;
-    @Autowired
     private UserFollowsDao userFollowsDao;
     @Autowired
-    private UserPostsDao userPostsDao;
-    @Autowired
     private BalanceOrdersDao balanceOrdersDao;
-    @Autowired
-    private SystemConfigService systemConfigService;
-    @Autowired
-    private ShareRecordsDao shareRecordsDao;
     @Autowired
     private DiamondRecordsDao diamondRecordsDao;
     @Autowired
@@ -51,9 +46,6 @@ public class UserService {
     public void _push(Users users){
         authDao.pushUser(users);
     }
-    public Users _getInviteOwner(String invite){
-        return usersDao.findAllByInvite(invite);
-    }
     public void _saveAndPush(Users _user){
         _user.setUtime(System.currentTimeMillis() / 1000);
         if (isUser(_user.getId())){
@@ -61,34 +53,8 @@ public class UserService {
         }
         _push(_user);
     }
-    public Users _getById(long id){
-        return usersDao.findAllById(id);
-    }
     public String _getSalt(){
         return RandomStringUtils.randomAlphanumeric(32);
-    }
-    public String _getInvite(){
-        String invite = RandomStringUtils.randomAlphanumeric(6);
-        Users users = usersDao.findAllByInvite(invite);
-        if (users != null){
-            return _getInvite();
-        }
-        return invite;
-    }
-    public Users _change(JSONObject object){
-        Users _user = JSONObject.toJavaObject(object,Users.class);
-        if (_user != null && isUser(_user.getToken())){
-            JSONObject _token = JSONObject.parseObject(JSONObject.toJSONString(authDao.findUserByToken(_user.getToken())));
-            for (Map.Entry<String, Object> entry: object.entrySet()) {
-                if (entry.getValue() != null){
-                    _token.put(entry.getKey(), entry.getValue());
-                }
-            }
-            _user = JSONObject.toJavaObject(_token,Users.class);
-            _saveAndPush(_user);
-            return _user;
-        }
-        return null;
     }
     public Users _change(Users _user){
         if (_user != null && isUser(_user.getId())){
@@ -107,46 +73,11 @@ public class UserService {
         }
         return null;
     }
-    public boolean isUser(Users users){
-        if (users.getId() > 0){
-            return isUser(users.getId());
-        }else {
-            return isUser(users.getToken());
-        }
-    }
     private boolean isUser(String token){
         return authDao.findUserByToken(token) != null;
     }
     private boolean isUser(long id){
         return usersDao.findAllById(id) != null;
-    }
-    public Users loginByIdentifier(String identifier){
-        return usersDao.findAllByIdentifier(identifier);
-    }
-    public JSONObject getResult(Users users){
-        JSONObject object = new JSONObject();
-        if (users != null){
-            object.put("nickname",users.getNickname());
-            object.put("sex", users.getSex());
-            object.put("birthday", users.getBirthday());
-            object.put("uid", users.getUid());
-            object.put("token", users.getToken());
-            object.put("phone", users.getPhone());
-            object.put("avatar",users.getAvatar());
-            object.put("gold", goldRecordsDao.countAllByBalance(users.getId()));
-            object.put("diamond", diamondRecordsDao.countAllByBalance(users.getId()));
-            object.put("invite",users.getInvite());
-            object.put("superior", users.getSuperior());
-            object.put("expired",users.getExpireds());
-            object.put("experience",users.getExperience());
-            object.put("remommends",videoRecommendsDao.countAllByUid(users.getId()));
-            object.put("follows", userFollowsDao.countAllByUid(users.getId()));
-            object.put("fans", userFollowsDao.countAllByToUid(users.getId()));
-        }
-        return object;
-    }
-    public Users getUserByPhone(String phone){
-        return usersDao.findAllByPhone(phone);
     }
     public JSONObject getBalance(Users user) {
         JSONObject object = new JSONObject();
@@ -171,15 +102,6 @@ public class UserService {
             return goldRecordsDao.countAllByBalance(user.getId());
         }
         return amount;
-    }
-
-    public JSONObject getShareCount(Users user) {
-        JSONObject object = new JSONObject();
-//        object.put("count",usersDao.countAllBySuperior(user.getId()));
-        object.put("count",shareRecordsDao.countAllByUid(user.getId()));
-        object.put("bgImage", systemConfigService.getValueByKey("shareBgImage"));
-        object.put("shareText", systemConfigService.getValueByKey("shareText"));
-        return object;
     }
 
     public JSONObject getList(JSONObject data) {
@@ -223,7 +145,6 @@ public class UserService {
                 usersPage = usersDao.findAllByStatus(status,pageable);
             }
         }else {
-            page--;
             usersPage = usersDao.findAll(pageable);
         }
         object.put("total",usersPage.getTotalElements());
@@ -270,6 +191,7 @@ public class UserService {
     }
 
     public boolean update(JSONObject data) {
+//        System.out.println(data);
         if (data != null){
             data.put("utime",System.currentTimeMillis());
             Users user = JSONObject.toJavaObject(data,Users.class);
@@ -290,11 +212,11 @@ public class UserService {
     private long getShare(long uid){
         return usersDao.countAllBySuperior(uid);
     }
-    public JSONObject superior(JSONObject data) {
+    public JSONObject superior(long uid) {
         JSONObject object = new JSONObject();
         JSONArray array = new JSONArray();
-        if (data != null && data.get("id") != null){
-            Users user = usersDao.findAllById(Long.parseLong(data.get("id").toString()));
+        if (uid > 0){
+            Users user = usersDao.findAllById(uid);
             if (user != null){
                 Users _superior = usersDao.findAllById(user.getSuperior());
                 if (_superior != null){
@@ -312,11 +234,11 @@ public class UserService {
         return object;
     }
 
-    public JSONObject share(JSONObject data) {
+    public JSONObject share(long uid) {
         JSONObject object = new JSONObject();
         JSONArray array = new JSONArray();
-        if (data != null && data.get("id") != null){
-            Users user = usersDao.findAllById(Long.parseLong(data.get("id").toString()));
+        if (uid > 0){
+            Users user = usersDao.findAllById(uid);
             if (user != null){
                 List<Users> usersList = usersDao.findAllBySuperior(user.getId());
                 for (Users users: usersList) {
@@ -368,5 +290,93 @@ public class UserService {
         object.put("total", smsRecordsPage.getTotalElements());
         object.put("list",array);
         return object;
+    }
+
+    public boolean clean() {
+        return false;
+    }
+
+    public JSONObject vipList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 0;
+        int limit = 20;
+        long expire = System.currentTimeMillis();
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<Users> usersPage;
+        if (data != null){
+            if (data.get("page") != null) page = Integer.parseInt(data.get("page").toString());
+            if (data.get("limit") != null) limit = Integer.parseInt(data.get("limit").toString());
+            page--;
+            if (page < 0) page =0;
+            if (limit < 1){
+                limit = 1;
+            }
+            if (data.get("sort") != null){
+                if (data.get("sort").toString().equals("+id")){
+                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+                }else {
+                    pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "id"));
+                }
+            }else {
+                pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            }
+            if ((data.get("title") == null || StringUtils.isEmpty(data.get("title").toString()))){
+                usersPage = usersDao.findAll(expire,pageable);
+            }else {
+                String title = "%"+data.get("title").toString()+"%";
+                usersPage = usersDao.findAll(title,expire,pageable);
+            }
+        }else {
+            usersPage = usersDao.findAll(expire,pageable);
+        }
+        object.put("total",usersPage.getTotalElements());
+        JSONArray array = new JSONArray();
+        for (Users user: usersPage.getContent()) {
+            JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(user));
+            jsonObject.put("gold", getGold(user));
+            jsonObject.put("diamond", getDiamond(user));
+            jsonObject.put("share", getShare(user.getId()));
+            jsonObject.put("follws", userFollowsDao.countAllByUid(user.getId()));
+            long balance = Long.parseLong(getBalance(user).get("balance").toString());
+            double b = balance / 100d;
+            jsonObject.put("balance", String.format("%.2f",b));
+            jsonObject.put("status",user.getStatus());
+            jsonObject.put("phone",user.getPhone());
+            jsonObject.put("invite",user.getInvite());
+            jsonObject.put("identifier",user.getIdentifier());
+            jsonObject.put("uid",user.getUid());
+            jsonObject.put("superior","无");
+            if (user.getSuperior() > 0){
+                Users _user = usersDao.findAllById(user.getSuperior());
+                if (_user != null) jsonObject.put("superior",_user.getNickname());
+            }
+            jsonObject.put("expireds",user.getExpireds());
+            jsonObject.put("bk_image",user.getBkImage());
+            jsonObject.put("avatar",user.getAvatar());
+            array.add(jsonObject);
+        }
+        object.put("list",array);
+        return object;
+    }
+
+    public boolean vipAdd(JSONObject data) {
+        Users user = usersDao.findAllById(data.getLong("id"));
+        long expire = TimeUtil.getAfterDaysZero(1);
+        if (StringUtils.isNotEmpty(data.getString("date"))){
+            expire = TimeUtil.getDateZero(data.getString("date"));
+            if (expire < System.currentTimeMillis()){
+                expire = TimeUtil.getAfterDaysZero(1);
+            }
+        }
+        if (user!=null){
+            user.setExpireds(expire);
+            _saveAndPush(user);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean cleanVip() {
+        return false;
     }
 }

@@ -3,10 +3,7 @@ package com.telebott.moviesmanage.service;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.telebott.moviesmanage.dao.*;
-import com.telebott.moviesmanage.entity.CommodityDiamond;
-import com.telebott.moviesmanage.entity.CommodityGold;
-import com.telebott.moviesmanage.entity.CommodityVip;
-import com.telebott.moviesmanage.entity.EditorRecommends;
+import com.telebott.moviesmanage.entity.*;
 import com.telebott.moviesmanage.util.TimeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +29,8 @@ public class CommodityService {
     private CommodityGoldDao commodityGoldDao;
     @Autowired
     private CommodityGoldOrderDao commodityGoldOrderDao;
+    @Autowired
+    private GameCashInDao gameCashInDao;
 
     public JSONObject getCommodityVipList(JSONObject data) {
         JSONObject object = new JSONObject();
@@ -192,6 +191,7 @@ public class CommodityService {
         return commodityDiamond;
     }
     public boolean addCommodityDiamond(JSONObject data) {
+//        System.out.println(data);
         data.put("ctime", System.currentTimeMillis());
         data.put("utime", System.currentTimeMillis());
         CommodityDiamond commodityDiamond = JSONObject.toJavaObject(data,CommodityDiamond.class);
@@ -202,8 +202,11 @@ public class CommodityService {
         return false;
     }
     public boolean updateCommodityDiamond(JSONObject data) {
-        data.put("utime", System.currentTimeMillis());
         CommodityDiamond commodityDiamond = JSONObject.toJavaObject(data,CommodityDiamond.class);
+        commodityDiamond.setUtime(System.currentTimeMillis());
+        if (commodityDiamond.getCtime() == 0){
+            commodityDiamond.setCtime(System.currentTimeMillis());
+        }
         commodityDiamond = _changeData(commodityDiamond);
         if (commodityDiamond != null){
             commodityDiamondDao.saveAndFlush(commodityDiamond);
@@ -313,6 +316,107 @@ public class CommodityService {
                 commodityGoldDao.delete(commodityGold);
                 return true;
             }
+        }
+        return false;
+    }
+
+    public JSONObject getCommodityGameList(JSONObject data) {
+        JSONObject object = new JSONObject();
+        int page = 1;
+        int limit = 20;
+        page--;
+        if (page<0) page =0;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+        Page<GameCashIn> cashInPage;
+        JSONArray array = new JSONArray();
+        if (data != null ) {
+            if (data.get("page") != null){
+                page = Integer.parseInt(data.get("page").toString());
+            }
+            page--;
+            if (page<0) page =0;
+            pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
+            pageable = VideosService.getPageable(data, page, limit, pageable);
+            if (data.get("title") != null &&
+                    StringUtils.isNotEmpty(data.getString("title")) &&
+                    VideosService.isNumberString(data.getString("title"))
+            ){
+                cashInPage = gameCashInDao.findAllById(data.getLong("title"),pageable);
+            }else {
+                cashInPage = gameCashInDao.findAll(pageable);
+            }
+        }else {
+            cashInPage = gameCashInDao.findAll(pageable);
+        }
+        object.put("list",cashInPage.getContent());
+        object.put("total",cashInPage.getTotalElements());
+        return object;
+    }
+    private boolean _checkData(GameCashIn gameCashIn){
+        JSONObject data = JSONObject.parseObject(JSONObject.toJSONString(gameCashIn));
+        for (Map.Entry<String, Object> entry: data.entrySet()) {
+            if (!entry.getKey().equals("id") && entry.getValue() == null){
+                return false;
+            }
+        }
+        gameCashIn = gameCashInDao.findAllByAmount(gameCashIn.getAmount());
+        return gameCashIn == null;
+    }
+    private GameCashIn  _changeData(GameCashIn gameCashIn){
+        JSONObject data = JSONObject.parseObject(JSONObject.toJSONString(gameCashIn));
+        gameCashIn = gameCashInDao.findAllById(gameCashIn.getId());
+        if (gameCashIn != null){
+            JSONObject object = JSONObject.parseObject(JSONObject.toJSONString(gameCashIn));
+            for (Map.Entry<String, Object> entry: data.entrySet()) {
+                if (entry.getValue() != null){
+                    object.put(entry.getKey(), entry.getValue());
+                }
+            }
+            if (gameCashIn.getAmount() == data.getLong("amount")){
+                gameCashIn = JSONObject.toJavaObject(object, GameCashIn.class);
+            }else {
+                gameCashIn = gameCashInDao.findAllByAmount(data.getLong("amount"));
+                if (gameCashIn == null) {
+                    gameCashIn = JSONObject.toJavaObject(object, GameCashIn.class);
+                }else {
+                    gameCashIn = null;
+                }
+            }
+        }
+        return gameCashIn;
+    }
+
+    public boolean addCommodityGame(JSONObject data) {
+        GameCashIn gameCashIn = JSONObject.toJavaObject(data,GameCashIn.class);
+        gameCashIn.setUpdateTime(System.currentTimeMillis());
+        gameCashIn.setAddTime(System.currentTimeMillis());
+        if (_checkData(gameCashIn)){
+            gameCashInDao.saveAndFlush(gameCashIn);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean updateCommodityGame(JSONObject data) {
+        GameCashIn gameCashIn = JSONObject.toJavaObject(data,GameCashIn.class);
+        gameCashIn.setUpdateTime(System.currentTimeMillis());
+        if (gameCashIn.getAddTime() == 0){
+            gameCashIn.setAddTime(System.currentTimeMillis());
+        }
+        gameCashIn = _changeData(gameCashIn);
+        if (gameCashIn != null){
+            gameCashInDao.saveAndFlush(gameCashIn);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean deleteCommodityGame(JSONObject data) {
+        GameCashIn gameCashIn = JSONObject.toJavaObject(data,GameCashIn.class);
+        if (gameCashIn != null){
+            gameCashIn = gameCashInDao.findAllById(gameCashIn.getId());
+            gameCashInDao.delete(gameCashIn);
+            return true;
         }
         return false;
     }

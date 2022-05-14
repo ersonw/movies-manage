@@ -15,7 +15,6 @@ import javax.persistence.*;
 public class CommodityDiamond {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private long id;
     private long diamond;
     private long amount;

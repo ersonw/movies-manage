@@ -84,7 +84,7 @@ public class TimeUtil {
         return calendar.getTimeInMillis();
     }
     public static long getDateZero(String str){
-        SimpleDateFormat dayFormat = new SimpleDateFormat("yyyyMMdd");
+        SimpleDateFormat dayFormat = new SimpleDateFormat("yyyy-MM-dd");
         try {
             return dayFormat.parse(str).getTime();
         } catch (ParseException e) {
@@ -108,9 +108,8 @@ public class TimeUtil {
     }
     public static String format(Temporal co, String pattern) {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
-        String str = fmt.format(co);
-//        System.out.println(pattern + ": " + str);
-        return str;
+        //        System.out.println(pattern + ": " + str);
+        return fmt.format(co);
     }
     public static String _getTime(int m){
         LocalDateTime ld = (LocalDateTime.now()).plusMinutes(m);

@@ -60,9 +60,9 @@ public class WithdrawService {
         return object;
     }
 
-    public boolean handleShenHe(JSONObject data, String user) {
-        if (data != null && data.get("id") != null){
-            WithdrawalRecords record = withdrawalRecordsDao.findAllById(data.getLong("id"));
+    public boolean handleShenHe(long id, String user) {
+        if (id > 0){
+            WithdrawalRecords record = withdrawalRecordsDao.findAllById(id);
             if (record != null && record.getStatus() == 0){
                 record.setUpdateTime(System.currentTimeMillis());
                 record.setStatus(1);
@@ -72,12 +72,19 @@ public class WithdrawService {
         }
         return false;
     }
-
+    public  static boolean isNumberString(String s){
+        for (int i=0;i< s.length(); i++){
+            if (!Character.isDigit(s.charAt(i))) return false;
+        }
+        return true;
+    }
     public boolean update(JSONObject data, String user) {
         if (data != null && data.get("id") != null){
             WithdrawalRecords record = withdrawalRecordsDao.findAllById(data.getLong("id"));
-            if (record != null && record.getStatus() == 1){
-                record.setStatus(2);
+            if (record != null){
+                int status = record.getStatus();
+                if (isNumberString(data.getString("status"))) status = Integer.parseInt(data.getString("status"));
+                record.setStatus(status);
                 record.setUpdateTime(System.currentTimeMillis());
                 record.setReason(data.getString("reason"));
                 withdrawalRecordsDao.saveAndFlush(record);
@@ -101,9 +108,9 @@ public class WithdrawService {
         return false;
     }
 
-    public boolean del(JSONObject data, SystemUser user) {
-        if (data != null && data.get("id") != null){
-            WithdrawalRecords record = withdrawalRecordsDao.findAllById(data.getLong("id"));
+    public boolean del(long id, SystemUser user) {
+        if (id > 0){
+            WithdrawalRecords record = withdrawalRecordsDao.findAllById(id);
             if (record != null && (record.getStatus() == 2 || record.getStatus() == -2)){
                 withdrawalRecordsDao.delete(record);
                 return true;
@@ -163,9 +170,9 @@ public class WithdrawService {
         return false;
     }
 
-    public boolean delCard(JSONObject data,  SystemUser user) {
-        if (data != null && data.get("id") != null){
-            WithdrawalCards card = withdrawalCardsDao.findAllById(data.getLong("id"));
+    public boolean delCard(long id,  SystemUser user) {
+        if (id > 0){
+            WithdrawalCards card = withdrawalCardsDao.findAllById(id);
             if (card != null){
                 withdrawalCardsDao.delete(card);
                 return true;
