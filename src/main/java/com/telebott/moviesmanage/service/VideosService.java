@@ -702,10 +702,8 @@ public class VideosService {
     }
     public JSONObject getRecommendVideoList(JSONObject data) {
         JSONObject object = new JSONObject();
-        int page = 1;
+        int page = 0;
         int limit = 20;
-        page--;
-        if (page<0) page =0;
         JSONArray array = new JSONArray();
         if (data != null && data.get("id") != null) {
             if (data.get("page") != null){
@@ -735,11 +733,9 @@ public class VideosService {
     }
     public JSONObject getActorList(JSONObject data) {
         JSONObject object = new JSONObject();
-        int page = 1;
+        int page = 0;
         int limit = 20;
         String title = null;
-        page--;
-        if (page<0) page =0;
         Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.ASC, "id"));
         Page<VideoActors> actorsPage;
         if (data != null ) {

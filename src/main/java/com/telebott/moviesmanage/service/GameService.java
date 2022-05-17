@@ -122,7 +122,7 @@ public class GameService {
     public boolean updateConfig(JSONObject data) {
         for (Map.Entry<String, Object> entry: data.entrySet()) {
             if (entry.getValue() != null){
-                WaLiConfig config = waLiConfigDao.findAllByName(entry.getValue().toString());
+                WaLiConfig config = waLiConfigDao.findAllByName(entry.getKey());
                 if (config == null) {
                     config = new WaLiConfig();
                     config.setAddTime(System.currentTimeMillis());

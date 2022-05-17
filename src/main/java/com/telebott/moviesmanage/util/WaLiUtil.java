@@ -22,6 +22,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
 
@@ -42,6 +43,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
+@Configurable
 @Component
 public class WaLiUtil {
     private static WaLiUtil self;
@@ -187,8 +189,9 @@ public class WaLiUtil {
                 StringUtils.isNotEmpty(signKey)
         ) {
             System.out.println("瓦力游戏配置加载成功！");
+            _timersRecords();
         }
-        _timersRecords();
+
     }
     private static String sendGet(String httpUrl, Map<String, String> parameter) {
         if (parameter == null || httpUrl == null) {
